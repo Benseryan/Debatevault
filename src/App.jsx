@@ -183,7 +183,7 @@ export default function App() {
     setGenerating(true);
     showToast("Generating arguments...");
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      
         method: "POST",
         headers: {
           "Content-Type": "application/json",
