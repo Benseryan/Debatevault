@@ -114,18 +114,23 @@ export default function App() {
 
   const INP = {width:"100%",padding:"10px 14px",background:T.surface2,border:`1px solid ${T.border2}`,borderRadius:"8px",color:T.text,fontSize:"14px",fontFamily:"inherit"};
 
+  // Keep body background in sync with theme
+  useEffect(() => {
+    document.body.style.background = T.bg;
+    document.body.style.transition = "background 0.2s";
+  }, [dark]);
+
   const STYLES = `
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap');
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{background:${T.bg};}
     ::-webkit-scrollbar{width:5px;}
-    ::-webkit-scrollbar-thumb{background:${T.scrollThumb};border-radius:3px;}
+    ::-webkit-scrollbar-thumb{background:#2a2a4a;border-radius:3px;}
     .card{transition:transform .18s,box-shadow .18s;cursor:pointer;}
     .card:hover{transform:translateY(-3px);box-shadow:0 14px 40px rgba(100,80,255,.15)!important;}
     .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
     input,select,textarea{font-family:inherit;}
-    input:focus,select:focus,textarea:focus{outline:none;border-color:${T.accent}!important;box-shadow:0 0 0 3px ${T.accent}22;}
-    ::placeholder{color:${T.placeholder};}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:#7864ff!important;box-shadow:0 0 0 3px #7864ff22;}
+    ::placeholder{color:#888;}
   `;
 
   useEffect(() => {
@@ -318,7 +323,7 @@ export default function App() {
             <div style={{display:"inline-flex",alignItems:"center",padding:"4px 14px",borderRadius:"20px",background:"rgba(120,100,255,.1)",border:"1px solid rgba(120,100,255,.2)",marginBottom:"20px"}}>
               <span style={{fontSize:"11px",color:T.accentText,fontWeight:600,textTransform:"uppercase",letterSpacing:".07em"}}>WSDC Argument Database</span>
             </div>
-            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,6vw,52px)",fontWeight:900,lineHeight:1.15,marginBottom:"12px",background:dark?"linear-gradient(135deg,#f0f0fa 30%,#a89aff)":"linear-gradient(135deg,#1a1a3a 30%,#6050ee)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
+            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,6vw,52px)",fontWeight:900,lineHeight:1.15,marginBottom:"12px",color:dark?"#f0f0fa":"#1a1a2e"}}>
               Every argument.<br/>Every motion.
             </h1>
             <p style={{color:T.textMuted,fontSize:"16px",marginBottom:"30px",lineHeight:1.6}}>Search any topic and find ready-to-use Proposition and Opposition arguments.</p>
