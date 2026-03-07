@@ -30,7 +30,16 @@ const db = {
   }
 };
 
-const THEMES = ["All Themes","Environment","Technology","International Relations","Criminal Justice","Economics","Human Rights","Gender & Identity","Health"];
+const THEME_TREE = {
+  "Economics": ["Taxation","Labour & Employment","Trade & Globalisation","Welfare & Inequality","Corporate & Markets"],
+  "Environment": ["Climate Change","Energy Policy","Conservation","Pollution","Sustainable Development"],
+  "Technology": ["Artificial Intelligence","Social Media","Privacy & Surveillance","Biotech & Medicine","Digital Economy"],
+  "International Relations": ["War & Conflict","Diplomacy & Sanctions","International Institutions","Foreign Aid","Nuclear & Security"],
+  "Criminal Justice": ["Policing & Reform","Punishment & Prisons","Drug Policy","Restorative Justice","Youth Crime"],
+  "Human Rights": ["Civil Liberties","Gender & Identity","Immigration & Refugees","Indigenous Rights","Freedom of Expression"],
+  "Health": ["Healthcare Systems","Mental Health","Public Health Policy","Medical Ethics","Addiction & Harm Reduction"],
+};
+const THEMES = ["All Themes", ...Object.keys(THEME_TREE)];
 const DIFFICULTIES = ["All","Easy","Medium","Hard"];
 
 const SYNONYMS = {
@@ -80,7 +89,7 @@ const LIGHT = {
   scrollThumb: "#ccccC4", placeholder: "#bbb",
 };
 
-const EMPTY_FORM = {motion:"",theme:"Environment",keywords:"",tournament:"",difficulty:"Medium",propArgs:[{name:"",summary:"",type:"Practical"}],oppArgs:[{name:"",summary:"",type:"Practical"}]};
+const EMPTY_FORM = {motion:"",theme:"Economics",subtheme:"",keywords:"",tournament:"",difficulty:"Medium",propArgs:[{name:"",summary:"",type:"Practical"}],oppArgs:[{name:"",summary:"",type:"Practical"}]};
 
 export default function App() {
   const [dark, setDark] = useState(true);
@@ -101,6 +110,7 @@ export default function App() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [toast, setToast] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [adminUnlocked, setAdminUnlocked] = useState(false);
   const [pwInput, setPwInput] = useState("");
@@ -205,6 +215,7 @@ export default function App() {
       id: Date.now(),
       motion: form.motion.trim(),
       theme: form.theme,
+      subtheme: form.subtheme || "",
       keywords: typeof form.keywords === "string" ? form.keywords.split(",").map(k => k.trim()).filter(Boolean) : form.keywords,
       tournament: form.tournament.trim(),
       difficulty: form.difficulty,
@@ -334,6 +345,54 @@ export default function App() {
     doc.save(`${filename}.pdf`);
   }
 
+  function startEdit(m) {
+    const propArgs = (m.prop_args || m.propArgs || []);
+    const oppArgs = (m.opp_args || m.oppArgs || []);
+    setForm({
+      motion: m.motion,
+      theme: m.theme,
+      subtheme: m.subtheme || "",
+      keywords: (m.keywords || []).join(", "),
+      tournament: m.tournament || "",
+      difficulty: m.difficulty || "Medium",
+      propArgs: propArgs.length ? propArgs : [{name:"",summary:"",type:"Practical"}],
+      oppArgs: oppArgs.length ? oppArgs : [{name:"",summary:"",type:"Practical"}],
+    });
+    setEditingId(m.id);
+    setAdminTab("add");
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+
+  async function saveEdit() {
+    if (!form.motion.trim()) { alert("Please enter a motion."); return; }
+    setSaving(true);
+    const updated = {
+      id: editingId,
+      motion: form.motion.trim(),
+      theme: form.theme,
+      subtheme: form.subtheme || "",
+      keywords: typeof form.keywords === "string" ? form.keywords.split(",").map(k => k.trim()).filter(Boolean) : form.keywords,
+      tournament: form.tournament.trim(),
+      difficulty: form.difficulty,
+      prop_args: form.propArgs.filter(a => a.name && a.name.trim()),
+      opp_args: form.oppArgs.filter(a => a.name && a.name.trim()),
+    };
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/motions?id=eq.${editingId}`, {
+        method: "PATCH",
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify(updated)
+      });
+      setMotions(p => p.map(x => x.id === editingId ? updated : x));
+      setForm(EMPTY_FORM);
+      setEditingId(null);
+      showToast("Motion updated!");
+    } catch {
+      showToast("Failed to update.", true);
+    }
+    setSaving(false);
+  }
+
   function checkPassword() {
     if (pwInput === ADMIN_PASSWORD) { setAdminUnlocked(true); setPwError(false); }
     else { setPwError(true); }
@@ -452,7 +511,7 @@ export default function App() {
             {displayed.map(m => (
               <div key={m.id} className="card" onClick={() => openMotion(m)} style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:"16px",padding:"22px",boxShadow:dark?"0 4px 20px rgba(0,0,0,.3)":"0 4px 20px rgba(0,0,0,.06)"}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:"12px"}}>
-                  <span className="pill" style={{background:`${TC[m.theme]||"#333"}22`,color:TC[m.theme]||T.textMuted,border:`1px solid ${TC[m.theme]||"#333"}44`}}>{m.theme}</span>
+                  <span className="pill" style={{background:`${TC[m.theme]||"#333"}22`,color:TC[m.theme]||T.textMuted,border:`1px solid ${TC[m.theme]||"#333"}44`}}>{m.subtheme || m.theme}</span>
                   <span className="pill" style={{background:`${DC[m.difficulty]}22`,color:DC[m.difficulty],border:`1px solid ${DC[m.difficulty]}44`}}>{m.difficulty}</span>
                 </div>
                 <p style={{fontSize:"14px",fontWeight:500,lineHeight:1.55,color:T.text,marginBottom:"16px"}}>{m.motion}</p>
@@ -556,11 +615,13 @@ export default function App() {
 
               {adminTab === "add" && (
                 <div style={{display:"flex",flexDirection:"column",gap:"18px"}}>
+                  {editingId && <div style={{background:"rgba(120,100,255,.1)",border:`1px solid ${T.accent}44`,borderRadius:"8px",padding:"10px 16px",fontSize:"13px",color:T.accentText}}>Editing existing motion. Click Update to save changes.</div>}
                   <Lbl label="Motion Text *" color={T.textMuted}>
                     <input style={INP} placeholder="e.g. THW implement universal basic income" value={form.motion} onChange={e => setForm(f => ({...f,motion:e.target.value}))} />
                   </Lbl>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"14px"}}>
-                    <Lbl label="Theme" color={T.textMuted}><select style={INP} value={form.theme} onChange={e => setForm(f => ({...f,theme:e.target.value}))}>{THEMES.filter(t => t!=="All Themes").map(t => <option key={t}>{t}</option>)}</select></Lbl>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"14px"}}>
+                    <Lbl label="Theme" color={T.textMuted}><select style={INP} value={form.theme} onChange={e => setForm(f => ({...f,theme:e.target.value,subtheme:""}))}>{Object.keys(THEME_TREE).map(t => <option key={t}>{t}</option>)}</select></Lbl>
+                    <Lbl label="Sub-theme" color={T.textMuted}><select style={INP} value={form.subtheme||""} onChange={e => setForm(f => ({...f,subtheme:e.target.value}))}><option value="">-- Select --</option>{(THEME_TREE[form.theme]||[]).map(s => <option key={s}>{s}</option>)}</select></Lbl>
                     <Lbl label="Difficulty" color={T.textMuted}><select style={INP} value={form.difficulty} onChange={e => setForm(f => ({...f,difficulty:e.target.value}))}>{["Easy","Medium","Hard"].map(d => <option key={d}>{d}</option>)}</select></Lbl>
                     <Lbl label="Tournament" color={T.textMuted}><input style={INP} placeholder="e.g. WSDC 2024" value={form.tournament} onChange={e => setForm(f => ({...f,tournament:e.target.value}))} /></Lbl>
                   </div>
@@ -589,9 +650,12 @@ export default function App() {
                     </div>
                   ))}
 
-                  <button onClick={submit} disabled={saving} style={{padding:"13px 28px",borderRadius:"10px",border:"none",background:"linear-gradient(135deg,#7864ff,#b0a0ff)",color:"#fff",fontSize:"15px",fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginTop:"6px",opacity:saving?0.7:1}}>
-                    {saving ? "Saving..." : "Save Motion to Database"}
-                  </button>
+                  <div style={{display:"flex",gap:"10px",marginTop:"6px"}}>
+                    <button onClick={editingId ? saveEdit : submit} disabled={saving} style={{flex:1,padding:"13px 28px",borderRadius:"10px",border:"none",background:"linear-gradient(135deg,#7864ff,#b0a0ff)",color:"#fff",fontSize:"15px",fontWeight:700,cursor:"pointer",fontFamily:"inherit",opacity:saving?0.7:1}}>
+                      {saving ? "Saving..." : editingId ? "Update Motion" : "Save Motion to Database"}
+                    </button>
+                    {editingId && <button onClick={() => { setForm(EMPTY_FORM); setEditingId(null); }} style={{padding:"13px 20px",borderRadius:"10px",border:`1px solid ${T.border2}`,background:"transparent",color:T.textMuted,fontSize:"14px",cursor:"pointer",fontFamily:"inherit"}}>Cancel</button>}
+                  </div>
                 </div>
               )}
 
@@ -611,6 +675,7 @@ export default function App() {
                         <p style={{fontSize:"12px",color:T.textMuted}}>{m.theme} · {getArgs(m,"prop").length} prop · {getArgs(m,"opp").length} opp</p>
                       </div>
                       <button onClick={() => openMotion(m)} style={{padding:"5px 12px",borderRadius:"6px",border:`1px solid ${T.border3}`,background:"transparent",color:T.textSub,fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>View</button>
+                      <button onClick={() => startEdit(m)} style={{padding:"5px 12px",borderRadius:"6px",border:`1px solid ${T.accent}55`,background:"rgba(120,100,255,.1)",color:T.accentText,fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>Edit</button>
                       <button onClick={() => deleteMotion(m.id)} style={{padding:"5px 12px",borderRadius:"6px",border:"1px solid #cc444444",background:"transparent",color:"#cc4444",fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>Delete</button>
                     </div>
                   ))}
