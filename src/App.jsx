@@ -270,6 +270,14 @@ export default function App() {
     localStorage.setItem("debatevault-theme", dark ? "dark" : "light");
   }, [dark]);
 
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const [mobile, setMobile] = React.useState(isMobile);
+  React.useEffect(() => {
+    const handler = () => setMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+
   const STYLES = `
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap');
     *{box-sizing:border-box;margin:0;padding:0;}
@@ -281,6 +289,13 @@ export default function App() {
     input,select,textarea{font-family:inherit;}
     input:focus,select:focus,textarea:focus{outline:none;border-color:#7864ff!important;box-shadow:0 0 0 3px #7864ff22;}
     ::placeholder{color:#888;}
+    @media(max-width:768px){
+      .sidebar{display:none!important;}
+      .main-content{margin-left:0!important;padding-bottom:80px;}
+    }
+    @media(min-width:769px){
+      .bottom-tab-bar{display:none!important;}
+    }
   `;
 
   useEffect(() => {
@@ -639,7 +654,7 @@ export default function App() {
       )}
 
       {/* SIDEBAR */}
-      <div style={{width:"220px",minHeight:"100vh",background:dark?"#0a0a18":"#1a1a2e",borderRight:`1px solid ${dark?"#1e1e3a":"#2a2a4a"}`,display:"flex",flexDirection:"column",position:"fixed",top:0,left:0,zIndex:99,fontFamily:"'DM Sans',sans-serif"}}>
+      <div className="sidebar" style={{width:"220px",minHeight:"100vh",background:dark?"#0a0a18":"#1a1a2e",borderRight:`1px solid ${dark?"#1e1e3a":"#2a2a4a"}`,display:"flex",flexDirection:"column",position:"fixed",top:0,left:0,zIndex:99,fontFamily:"'DM Sans',sans-serif"}}>
         {/* Logo */}
         <div onClick={() => { setView("browse"); clearSearch(); }} style={{padding:"24px 20px 20px",cursor:"pointer",borderBottom:`1px solid ${dark?"#1e1e3a":"#2a2a4a"}`}}>
           <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"4px"}}>
@@ -680,7 +695,41 @@ export default function App() {
       </div>
 
       {/* MAIN CONTENT — offset by sidebar width */}
-      <div style={{marginLeft:"220px",flex:1,minWidth:0}}>
+      <div className="main-content" style={{marginLeft:"220px",flex:1,minWidth:0}}>
+
+      {/* MOBILE TOP BAR */}
+      {mobile && (
+        <div style={{position:"fixed",top:0,left:0,right:0,zIndex:99,background:dark?"#0a0a18":"#1a1a2e",borderBottom:"1px solid #1e1e3a",height:"52px",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px",fontFamily:"'DM Sans',sans-serif"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+            <div style={{width:"28px",height:"28px",borderRadius:"8px",background:"linear-gradient(135deg,#7864ff,#b0a0ff)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px"}}>⚖</div>
+            <span style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"16px",color:"#f0f0fa"}}>DebateVault</span>
+          </div>
+          <button onClick={() => setDark(d => !d)} style={{background:"none",border:"none",fontSize:"18px",cursor:"pointer",color:"#7070a0"}}>
+            {dark ? "☀️" : "🌙"}
+          </button>
+        </div>
+      )}
+
+      {/* MOBILE BOTTOM TAB BAR */}
+      <div className="bottom-tab-bar" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:99,background:dark?"#0a0a18":"#1a1a2e",borderTop:"1px solid #1e1e3a",height:"64px",display:"flex",alignItems:"center",justifyContent:"space-around",fontFamily:"'DM Sans',sans-serif"}}>
+        {[
+          ["browse","🗂","Browse"],
+          ["timer","⏱","Timer"],
+          ["news","📰","News"],
+          ["chain","🔗","Chain"],
+          ["admin","⚙","Admin"],
+        ].map(([v,icon,label]) => {
+          const active = view === v || (view === "detail" && v === "browse");
+          return (
+            <button key={v} onClick={() => { setView(v); if (v==="browse") clearSearch(); }}
+              style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"3px",background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",padding:"8px 12px",borderRadius:"10px",transition:"all .15s",flex:1}}>
+              <span style={{fontSize:"20px",lineHeight:1}}>{icon}</span>
+              <span style={{fontSize:"10px",fontWeight:active?700:400,color:active?"#c0b0ff":"#7070a0"}}>{label}</span>
+              {active && <div style={{width:"20px",height:"2px",borderRadius:"2px",background:"#7864ff",marginTop:"1px"}} />}
+            </button>
+          );
+        })}
+      </div>
 
       {loadError && (
         <div style={{background:dark?"#2a1a00":"#fff8ee",borderBottom:`1px solid ${dark?"#7a520033":"#f0c060"}`,padding:"8px 24px",textAlign:"center",fontSize:"12px",color:dark?"#ffaa44":"#a07000"}}>
@@ -691,7 +740,7 @@ export default function App() {
       {/* BROWSE */}
       {view === "browse" && (
         <div>
-          <div style={{maxWidth:"720px",margin:"0 auto",padding:"52px 24px 36px",textAlign:"center"}}>
+          <div style={{maxWidth:"720px",margin:"0 auto",padding:mobile?"80px 16px 28px":"52px 24px 36px",textAlign:"center"}}>
             <div style={{display:"inline-flex",alignItems:"center",padding:"4px 14px",borderRadius:"20px",background:"rgba(120,100,255,.1)",border:"1px solid rgba(120,100,255,.2)",marginBottom:"20px"}}>
               <span style={{fontSize:"11px",color:T.accentText,fontWeight:600,textTransform:"uppercase",letterSpacing:".07em"}}>WSDC Argument Database</span>
             </div>
@@ -737,7 +786,7 @@ export default function App() {
             </div>
           )}
 
-          <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 60px",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(290px,1fr))",gap:"14px"}}>
+          <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 60px",display:"grid",gridTemplateColumns:mobile?"1fr":"repeat(auto-fill,minmax(290px,1fr))",gap:"14px"}}>
             {displayed.map(m => (
               <div key={m.id} className="card" onClick={() => openMotion(m)} style={{background:T.surface,border:`1px solid ${dark?"#2a2a50":"#d0d0c8"}`,borderRadius:"16px",padding:"22px",boxShadow:dark?"0 4px 24px rgba(0,0,0,.5)":"0 4px 24px rgba(0,0,0,.1)"}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:"12px"}}>
@@ -766,7 +815,7 @@ export default function App() {
 
       {/* DETAIL */}
       {view === "detail" && selected && (
-        <div style={{maxWidth:"880px",margin:"0 auto",padding:"36px 24px 60px"}}>
+        <div style={{maxWidth:"880px",margin:"0 auto",padding:mobile?"80px 16px 80px":"36px 24px 60px"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"28px"}}>
             <button onClick={() => setView("browse")} style={{background:"none",border:"none",color:T.accentText,fontSize:"14px",cursor:"pointer",fontFamily:"inherit"}}>← Back</button>
             <button onClick={() => exportPDF(selected)} style={{padding:"8px 18px",borderRadius:"8px",border:`1px solid ${T.border2}`,background:T.surface2,color:T.textSub,fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:"6px"}}>
@@ -806,7 +855,7 @@ export default function App() {
 
       {/* NEWS */}
       {view === "news" && (
-        <div style={{maxWidth:"1080px",margin:"0 auto",padding:"40px 24px 60px"}}>
+        <div style={{maxWidth:"1080px",margin:"0 auto",padding:mobile?"80px 16px 80px":"40px 24px 60px"}}>
           <div style={{marginBottom:"28px"}}>
             <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"28px",marginBottom:"6px",color:T.text}}>Debate News</h1>
             <p style={{color:T.textMuted,fontSize:"14px"}}>Stay on top of current events across every debate theme.</p>
@@ -863,7 +912,7 @@ export default function App() {
                   ↻ Refresh
                 </button>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:"14px"}}>
+              <div style={{display:"grid",gridTemplateColumns:mobile?"1fr":"repeat(auto-fill,minmax(300px,1fr))",gap:"14px"}}>
                 {newsArticles
                   .filter(a =>
                     (newsFilter === "All" || a.themes.includes(newsFilter)) &&
