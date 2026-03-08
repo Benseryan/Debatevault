@@ -876,8 +876,8 @@ export default function App() {
                       onMouseLeave={e => { e.currentTarget.style.transform=""; e.currentTarget.style.boxShadow=dark?"0 4px 20px rgba(0,0,0,.3)":"0 4px 20px rgba(0,0,0,.06)"; }}>
                       {/* Image */}
                       {article.image ? (
-                        <div style={{width:"100%",height:"160px",overflow:"hidden",background:T.surface2}}>
-                          <img src={article.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
+                        <div style={{width:"100%",height:"120px",overflow:"hidden",background:T.surface2}}>
+                          <img src={article.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center top",display:"block"}}
                             onError={e => { e.target.parentElement.style.display="none"; }} />
                         </div>
                       ) : (
