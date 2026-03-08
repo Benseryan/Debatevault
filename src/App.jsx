@@ -106,6 +106,7 @@ export default function App() {
   const [results, setResults] = useState([]);
   const [filterTheme, setFilterTheme] = useState("All Themes");
   const [filterDiff, setFilterDiff] = useState("All");
+  const [filterSubtheme, setFilterSubtheme] = useState("All");
   const [adminTab, setAdminTab] = useState("add");
   const [form, setForm] = useState(EMPTY_FORM);
   const [toast, setToast] = useState(null);
@@ -410,6 +411,7 @@ export default function App() {
 
   const browsed = motions.filter(m =>
     (filterTheme === "All Themes" || m.theme === filterTheme) &&
+    (filterSubtheme === "All" || m.subtheme === filterSubtheme) &&
     (filterDiff === "All" || m.difficulty === filterDiff)
   );
   const displayed = searched ? results : browsed;
@@ -489,10 +491,15 @@ export default function App() {
 
           {!searched && (
             <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 18px",display:"flex",gap:"10px",flexWrap:"wrap",alignItems:"center"}}>
-              <select value={filterTheme} onChange={e => setFilterTheme(e.target.value)} style={{padding:"7px 13px",background:T.surface,border:`1px solid ${T.border2}`,borderRadius:"8px",color:T.text,fontSize:"13px",cursor:"pointer",fontFamily:"inherit"}}>
+              <select value={filterTheme} onChange={e => { setFilterTheme(e.target.value); setFilterSubtheme("All"); }} style={{padding:"7px 13px",background:T.surface,border:`1px solid ${T.border2}`,borderRadius:"8px",color:T.text,fontSize:"13px",cursor:"pointer",fontFamily:"inherit"}}>
                 {THEMES.map(t => <option key={t}>{t}</option>)}
               </select>
-  
+              {filterTheme !== "All Themes" && THEME_TREE[filterTheme] && (
+                <select value={filterSubtheme} onChange={e => setFilterSubtheme(e.target.value)} style={{padding:"7px 13px",background:T.surface,border:`1px solid ${T.accent}55`,borderRadius:"8px",color:T.accentText,fontSize:"13px",cursor:"pointer",fontFamily:"inherit"}}>
+                  <option value="All">All {filterTheme}</option>
+                  {THEME_TREE[filterTheme].map(s => <option key={s}>{s}</option>)}
+                </select>
+              )}
               {DIFFICULTIES.map(d => (
                 <button key={d} onClick={() => setFilterDiff(d)} style={{padding:"7px 14px",borderRadius:"8px",border:`1px solid ${filterDiff===d?T.accent:T.border2}`,background:filterDiff===d?"rgba(120,100,255,.15)":"transparent",color:filterDiff===d?T.accentText:T.textMuted,fontSize:"13px",cursor:"pointer",fontWeight:500,fontFamily:"inherit"}}>{d}</button>
               ))}
