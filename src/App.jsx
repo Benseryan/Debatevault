@@ -105,7 +105,10 @@ const LIGHT = {
 const EMPTY_FORM = {motion:"",theme:"Economics",subtheme:"",keywords:"",tournament:"",difficulty:"Medium",propArgs:[{name:"",summary:"",type:"Practical"}],oppArgs:[{name:"",summary:"",type:"Practical"}]};
 
 export default function App() {
-  const [dark, setDark] = useState(true);
+  const [dark, setDark] = useState(() => {
+    const saved = localStorage.getItem("debatevault-theme");
+    return saved !== null ? saved === "dark" : true;
+  });
   const T = dark ? DARK : LIGHT;
 
   const [motions, setMotions] = useState([]);
@@ -250,6 +253,7 @@ export default function App() {
   useEffect(() => {
     document.body.style.background = T.bg;
     document.body.style.transition = "background 0.2s";
+    localStorage.setItem("debatevault-theme", dark ? "dark" : "light");
   }, [dark]);
 
   const STYLES = `
