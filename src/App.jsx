@@ -129,15 +129,15 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [generating, setGenerating] = useState(false);
+  const [apiKey, setApiKey] = useState("");
+  const [apiKeySet, setApiKeySet] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState("");
   const [adminUnlocked, setAdminUnlocked] = useState(false);
   const [pwInput, setPwInput] = useState("");
   const [pwError, setPwError] = useState(false);
   const [serviceKey, setServiceKey] = useState("");
   const [serviceKeySet, setServiceKeySet] = useState(false);
   const [skInput, setSkInput] = useState("");
-  const [apiKey, setApiKey] = useState("");
-  const [apiKeySet, setApiKeySet] = useState(false);
-  const [apiKeyInput, setApiKeyInput] = useState("");
 
   // Timer state
   const [timerRunning, setTimerRunning] = useState(false);
@@ -156,6 +156,20 @@ export default function App() {
   const [newsFilter, setNewsFilter] = useState("All");
   const [newsSourceFilter, setNewsSourceFilter] = useState("All");
   const [newsLoaded, setNewsLoaded] = useState(false);
+
+  // Logic chain state
+  const BLOCK_TYPES = [
+    { type: "Claim",     color: "#7864ff", bg: "rgba(120,100,255,.15)", desc: "The 'What' — your core assertion" },
+    { type: "Mechanism", color: "#40c090", bg: "rgba(64,192,144,.15)",  desc: "The 'How' — why this happens" },
+    { type: "Link",      color: "#ffaa44", bg: "rgba(255,170,68,.15)",  desc: "The 'Logic' — connecting step" },
+    { type: "Impact",    color: "#ff7070", bg: "rgba(255,112,112,.15)", desc: "The 'Why it matters' — real world consequence" },
+  ];
+  const EMPTY_BLOCK = { type: "Claim", text: "" };
+  const [chainBlocks, setChainBlocks] = useState([{ type: "Claim", text: "" }]);
+  const [chainMotion, setChainMotion] = useState("");
+  const [chainSide, setChainSide] = useState("Proposition");
+  const [stressTesting, setStressTesting] = useState(false);
+  const [stressResult, setStressResult] = useState(null);
 
   function formatTime(secs) {
     if (secs === null) return "--:--";
@@ -309,6 +323,7 @@ export default function App() {
 
   async function generateArguments() {
     if (!form.motion.trim()) { showToast("Enter a motion title first", true); return; }
+
     if (!apiKeySet) { showToast("Enter your Anthropic API key first", true); return; }
     setGenerating(true);
     showToast("Generating arguments...");
@@ -549,6 +564,32 @@ export default function App() {
     setNewsLoaded(true);
   }
 
+  async function runStressTest() {
+    const filled = chainBlocks.filter(b => b.text.trim());
+    if (filled.length < 2) { showToast("Add at least 2 blocks to stress test.", true); return; }
+
+    setStressTesting(true);
+    setStressResult(null);
+    try {
+      const res = await fetch("/api/stresstest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chain: filled })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      setStressResult(data);
+    } catch (e) {
+      showToast("Stress test failed: " + e.message, true);
+    }
+    setStressTesting(false);
+  }
+
+  function checkApiKey() {
+    if (apiKeyInput.trim().startsWith("sk-ant")) { setApiKey(apiKeyInput.trim()); setApiKeySet(true); showToast("API key connected!"); }
+    else { alert("That doesn't look like an Anthropic API key."); }
+  }
+
   function checkPassword() {
     if (pwInput === ADMIN_PASSWORD) { setAdminUnlocked(true); setPwError(false); }
     else { setPwError(true); }
@@ -557,11 +598,6 @@ export default function App() {
   function checkServiceKey() {
     if (skInput.trim().startsWith("eyJ")) { setServiceKey(skInput.trim()); setServiceKeySet(true); }
     else { alert("Paste your Supabase service_role key."); }
-  }
-
-  function checkApiKey() {
-    if (apiKeyInput.trim().startsWith("sk-ant")) { setApiKey(apiKeyInput.trim()); setApiKeySet(true); showToast("API key connected!"); }
-    else { alert("That doesn't look like an Anthropic API key."); }
   }
 
   const browsed = motions.filter(m =>
@@ -608,6 +644,7 @@ export default function App() {
             ["browse", "🗂", "Browse"],
             ["timer",  "⏱", "Prep Timer"],
             ["news",   "📰", "News"],
+            ["chain",  "🔗", "Logic Chain"],
             ["admin",  "⚙", "Admin"],
           ].map(([v, icon, label]) => {
             const active = view === v || (view === "detail" && v === "browse");
@@ -866,6 +903,129 @@ export default function App() {
         </div>
       )}
 
+      {/* LOGIC CHAIN */}
+      {view === "chain" && (
+        <div style={{maxWidth:"720px",margin:"0 auto",padding:"40px 24px 60px"}}>
+          <div style={{marginBottom:"28px"}}>
+            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"28px",marginBottom:"6px",color:T.text}}>Logic Chain Builder</h1>
+            <p style={{color:T.textMuted,fontSize:"14px",lineHeight:1.6}}>Build your argument step by step. Every link in the chain must hold — or an opponent will break it.</p>
+          </div>
+
+          {/* Motion + side */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:"12px",marginBottom:"24px"}}>
+            <input value={chainMotion} onChange={e => setChainMotion(e.target.value)}
+              placeholder="Motion (optional — e.g. THW implement sanctions on Iran)"
+              style={{...INP}} />
+            <div style={{display:"flex",gap:"6px"}}>
+              {["Proposition","Opposition"].map(s => (
+                <button key={s} onClick={() => setChainSide(s)}
+                  style={{padding:"10px 14px",borderRadius:"8px",border:`1px solid ${chainSide===s?(s==="Proposition"?"#40c09066":"#ff707066"):T.border2}`,background:chainSide===s?(s==="Proposition"?"rgba(40,160,120,.12)":"rgba(255,100,100,.12)"):"transparent",color:chainSide===s?(s==="Proposition"?"#40c090":"#ff7070"):T.textMuted,fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
+                  {s === "Proposition" ? "Prop" : "Opp"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Block type legend */}
+          <div style={{display:"flex",gap:"8px",flexWrap:"wrap",marginBottom:"20px"}}>
+            {BLOCK_TYPES.map(bt => (
+              <span key={bt.type} style={{fontSize:"11px",padding:"3px 10px",borderRadius:"20px",background:bt.bg,color:bt.color,border:`1px solid ${bt.color}44`,fontWeight:600}}>{bt.type}</span>
+            ))}
+          </div>
+
+          {/* Chain blocks */}
+          <div style={{display:"flex",flexDirection:"column",gap:"0px",marginBottom:"20px"}}>
+            {chainBlocks.map((block, i) => {
+              const bt = BLOCK_TYPES.find(b => b.type === block.type) || BLOCK_TYPES[0];
+              const isWeak = stressResult && stressResult.weakest_link === i + 1;
+              return (
+                <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
+                  <div style={{width:"100%",background:isWeak?"rgba(255,80,80,.08)":T.surface,border:`2px solid ${isWeak?"#ff5050":bt.color}`,borderRadius:"12px",padding:"16px",position:"relative",boxShadow:isWeak?"0 0 20px rgba(255,80,80,.2)":dark?"0 4px 16px rgba(0,0,0,.3)":"0 4px 16px rgba(0,0,0,.08)",transition:"all .3s"}}>
+                    {isWeak && (
+                      <div style={{position:"absolute",top:"-12px",left:"16px",background:"#ff5050",color:"#fff",fontSize:"11px",fontWeight:700,padding:"2px 10px",borderRadius:"20px"}}>⚠ WEAKEST LINK</div>
+                    )}
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
+                      <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
+                        {BLOCK_TYPES.map(bt2 => (
+                          <button key={bt2.type} onClick={() => { const b=[...chainBlocks]; b[i]={...b[i],type:bt2.type}; setChainBlocks(b); setStressResult(null); }}
+                            style={{padding:"3px 10px",borderRadius:"20px",border:`1px solid ${bt2.color}44`,background:block.type===bt2.type?bt2.bg:"transparent",color:bt2.color,fontSize:"11px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+                            {bt2.type}
+                          </button>
+                        ))}
+                      </div>
+                      {chainBlocks.length > 1 && (
+                        <button onClick={() => { setChainBlocks(chainBlocks.filter((_,j)=>j!==i)); setStressResult(null); }}
+                          style={{background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:"18px",lineHeight:1,padding:"0 4px"}}>×</button>
+                      )}
+                    </div>
+                    <textarea
+                      value={block.text}
+                      onChange={e => { const b=[...chainBlocks]; b[i]={...b[i],text:e.target.value}; setChainBlocks(b); setStressResult(null); }}
+                      placeholder={
+                        block.type==="Claim" ? "e.g. Economic sanctions will lead to regime change" :
+                        block.type==="Mechanism" ? "e.g. Sanctions devalue the local currency, cutting off imports" :
+                        block.type==="Link" ? "e.g. Middle class loses savings, turning against the regime" :
+                        "e.g. Mass protests force the leader to step down to avoid a coup"
+                      }
+                      style={{...INP,minHeight:"70px",resize:"vertical",border:"none",background:"transparent",padding:"0",fontSize:"14px",lineHeight:1.6}}
+                    />
+                  </div>
+                  {/* Connector arrow */}
+                  {i < chainBlocks.length - 1 && (
+                    <div style={{width:"2px",height:"24px",background:`linear-gradient(${bt.color},${(BLOCK_TYPES.find(b=>b.type===chainBlocks[i+1].type)||BLOCK_TYPES[0]).color})`,margin:"0",position:"relative"}}>
+                      <div style={{position:"absolute",bottom:"-6px",left:"50%",transform:"translateX(-50%)",width:0,height:0,borderLeft:"6px solid transparent",borderRight:"6px solid transparent",borderTop:`8px solid ${(BLOCK_TYPES.find(b=>b.type===chainBlocks[i+1].type)||BLOCK_TYPES[0]).color}`}} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Add block buttons */}
+          <div style={{display:"flex",gap:"8px",flexWrap:"wrap",marginBottom:"24px"}}>
+            {BLOCK_TYPES.map(bt => (
+              <button key={bt.type} onClick={() => { setChainBlocks([...chainBlocks,{type:bt.type,text:""}]); setStressResult(null); }}
+                style={{padding:"8px 16px",borderRadius:"8px",border:`1px solid ${bt.color}44`,background:bt.bg,color:bt.color,fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+                + {bt.type}
+              </button>
+            ))}
+          </div>
+
+          {/* Action buttons */}
+          <div style={{display:"flex",gap:"10px",marginBottom:"28px"}}>
+            <button onClick={runStressTest} disabled={stressTesting}
+              style={{flex:1,padding:"13px",borderRadius:"10px",border:"none",background:"linear-gradient(135deg,#ff7070,#ffaa44)",color:"#fff",fontSize:"15px",fontWeight:700,cursor:"pointer",fontFamily:"inherit",opacity:stressTesting?0.7:1}}>
+              {stressTesting ? "Stress testing..." : "⚡ Stress Test this Chain"}
+            </button>
+            <button onClick={() => { setChainBlocks([{type:"Claim",text:""}]); setStressResult(null); setChainMotion(""); }}
+              style={{padding:"13px 20px",borderRadius:"10px",border:`1px solid ${T.border2}`,background:"transparent",color:T.textMuted,fontSize:"14px",cursor:"pointer",fontFamily:"inherit"}}>
+              Reset
+            </button>
+          </div>
+
+          {/* Stress test result */}
+          {stressResult && (
+            <div style={{background:dark?"#1a0d0d":"#fff5f5",border:"2px solid #ff505066",borderRadius:"14px",padding:"24px",marginBottom:"24px"}}>
+              <p style={{fontSize:"13px",fontWeight:700,color:"#ff5050",textTransform:"uppercase",letterSpacing:".06em",marginBottom:"16px"}}>⚡ Stress Test Result</p>
+              <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
+                <div>
+                  <p style={{fontSize:"11px",color:T.textMuted,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",marginBottom:"4px"}}>Verdict</p>
+                  <p style={{fontSize:"15px",fontWeight:600,color:T.text,lineHeight:1.5}}>{stressResult.verdict}</p>
+                </div>
+                <div style={{background:dark?"rgba(255,80,80,.08)":"rgba(255,80,80,.05)",border:"1px solid #ff505033",borderRadius:"10px",padding:"14px"}}>
+                  <p style={{fontSize:"11px",color:"#ff5050",fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",marginBottom:"6px"}}>How an opponent attacks it</p>
+                  <p style={{fontSize:"14px",color:T.textSub,lineHeight:1.7,fontStyle:"italic"}}>"{stressResult.attack}"</p>
+                </div>
+                <div style={{background:dark?"rgba(120,100,255,.08)":"rgba(120,100,255,.05)",border:`1px solid ${T.accent}33`,borderRadius:"10px",padding:"14px"}}>
+                  <p style={{fontSize:"11px",color:T.accentText,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",marginBottom:"6px"}}>How to fix it</p>
+                  <p style={{fontSize:"14px",color:T.textSub,lineHeight:1.7}}>{stressResult.fix}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* TIMER */}
       {view === "timer" && (
         <div style={{maxWidth:"520px",margin:"0 auto",padding:"40px 24px 60px"}}>
@@ -985,7 +1145,7 @@ export default function App() {
               {!apiKeySet && (
                 <div style={{background:dark?"#0d1a0d":"#f0fff4",border:`1px solid ${dark?"#2a4a2a":"#b0ddc0"}`,borderRadius:"12px",padding:"20px",marginBottom:"24px"}}>
                   <p style={{fontSize:"14px",fontWeight:600,color:"#2a8a50",marginBottom:"6px"}}>Connect AI Generation (optional)</p>
-                  <p style={{fontSize:"13px",color:T.textMuted,marginBottom:"12px"}}>Paste your Anthropic API key to enable one-click argument generation. Get one at console.anthropic.com</p>
+                  <p style={{fontSize:"13px",color:T.textMuted,marginBottom:"12px"}}>Paste your Anthropic API key to enable one-click argument generation.</p>
                   <div style={{display:"flex",gap:"10px"}}>
                     <input type="password" style={{...INP,flex:1}} placeholder="sk-ant-..." value={apiKeyInput} onChange={e => setApiKeyInput(e.target.value)} />
                     <button onClick={checkApiKey} style={{padding:"10px 18px",borderRadius:"8px",border:"none",background:"#2a6a3a",color:"#fff",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>Connect</button>
@@ -1084,3 +1244,4 @@ function Lbl({ label, color, children }) {
     </div>
   );
 }
+
