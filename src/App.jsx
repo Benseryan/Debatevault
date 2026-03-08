@@ -42,6 +42,19 @@ const THEME_TREE = {
 const THEMES = ["All Themes", ...Object.keys(THEME_TREE)];
 const DIFFICULTIES = ["All","Easy","Medium","Hard"];
 
+const NEWS_SOURCES = [
+  { id: "bbc-world",    name: "BBC World",         url: "https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/world/rss.xml",           themes: ["International Relations","Human Rights"] },
+  { id: "bbc-business", name: "BBC Business",      url: "https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/business/rss.xml",         themes: ["Economics"] },
+  { id: "bbc-science",  name: "BBC Science",       url: "https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/science_and_environment/rss.xml", themes: ["Environment","Technology","Health"] },
+  { id: "reuters",      name: "Reuters",           url: "https://api.rss2json.com/v1/api.json?rss_url=https://feeds.reuters.com/reuters/topNews",               themes: ["International Relations","Economics"] },
+  { id: "aljazeera",    name: "Al Jazeera",        url: "https://api.rss2json.com/v1/api.json?rss_url=https://www.aljazeera.com/xml/rss/all.xml",              themes: ["International Relations","Human Rights"] },
+  { id: "guardian-world","name":"The Guardian",    url: "https://api.rss2json.com/v1/api.json?rss_url=https://www.theguardian.com/world/rss",                  themes: ["Human Rights","International Relations"] },
+  { id: "guardian-env", name: "Guardian Environment", url: "https://api.rss2json.com/v1/api.json?rss_url=https://www.theguardian.com/environment/rss",         themes: ["Environment"] },
+  { id: "fp",           name: "Foreign Policy",    url: "https://api.rss2json.com/v1/api.json?rss_url=https://foreignpolicy.com/feed/",                        themes: ["International Relations"] },
+  { id: "hrw",          name: "Human Rights Watch",url: "https://api.rss2json.com/v1/api.json?rss_url=https://www.hrw.org/rss/news",                           themes: ["Human Rights","Criminal Justice"] },
+  { id: "economist",    name: "The Economist",     url: "https://api.rss2json.com/v1/api.json?rss_url=https://www.economist.com/sections/economics/rss.xml",   themes: ["Economics"] },
+];
+
 const SYNONYMS = {
   "tesla":["electric","ev","vehicle","subsidies","car","cars"],"car":["vehicle","ev","electric","transport","tesla"],"cars":["vehicle","ev","electric","transport","tesla","subsidies"],"electric":["ev","vehicle","tesla","green","car"],"ev":["electric","vehicle","tesla","subsidies","car"],"warming":["climate","carbon","environment","emissions"],"pollution":["carbon","climate","environment","emissions"],"tiktok":["social","media","youth","mental","health","ban"],"instagram":["social","media","youth","mental","health"],"facebook":["social","media","youth","mental","health"],"phone":["social","media","technology","youth"],"weed":["drugs","legalisation","cannabis","harm"],"cannabis":["drugs","legalisation","harm","reduction"],"marijuana":["drugs","legalisation","cannabis"],"war":["international","conflict","peace","military"],"prison":["criminal","justice","incarceration","punishment"],"poverty":["economics","income","inequality","welfare"],"immigration":["refugees","borders","international","rights"],"abortion":["rights","autonomy","women","reproductive"],"speech":["censorship","expression","rights","freedom"],
 };
@@ -133,6 +146,14 @@ export default function App() {
   const [timerCustom, setTimerCustom] = useState(15);
   const timerRef = React.useRef(null);
   const [timerDismissed, setTimerDismissed] = useState(false);
+
+  // News state
+  const [newsArticles, setNewsArticles] = useState([]);
+  const [newsLoading, setNewsLoading] = useState(false);
+  const [newsError, setNewsError] = useState(false);
+  const [newsFilter, setNewsFilter] = useState("All");
+  const [newsSourceFilter, setNewsSourceFilter] = useState("All");
+  const [newsLoaded, setNewsLoaded] = useState(false);
 
   function formatTime(secs) {
     if (secs === null) return "--:--";
@@ -496,6 +517,36 @@ export default function App() {
     setSaving(false);
   }
 
+  async function loadNews() {
+    setNewsLoading(true);
+    setNewsError(false);
+    const results = [];
+    await Promise.all(NEWS_SOURCES.map(async source => {
+      try {
+        const res = await fetch(source.url);
+        const data = await res.json();
+        if (data.items) {
+          data.items.slice(0, 8).forEach(item => {
+            results.push({
+              id: item.guid || item.link,
+              title: item.title,
+              description: (item.description || "").replace(/<[^>]+>/g, "").slice(0, 180),
+              link: item.link,
+              pubDate: item.pubDate,
+              source: source.name,
+              sourceId: source.id,
+              themes: source.themes,
+            });
+          });
+        }
+      } catch {}
+    }));
+    results.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+    setNewsArticles(results);
+    setNewsLoading(false);
+    setNewsLoaded(true);
+  }
+
   function checkPassword() {
     if (pwInput === ADMIN_PASSWORD) { setAdminUnlocked(true); setPwError(false); }
     else { setPwError(true); }
@@ -586,7 +637,7 @@ export default function App() {
             {dark ? "☀️" : "🌙"}
           </button>
 
-          {[["browse","Browse"],["timer","⏱ Timer"],["admin","Admin ✦"]].map(([v,label]) => (
+          {[["browse","Browse"],["timer","⏱ Timer"],["news","📰 News"],["admin","Admin ✦"]].map(([v,label]) => (
             <button key={v} onClick={() => { setView(v); if (v==="browse") clearSearch(); }}
               style={{padding:"7px 16px",borderRadius:"8px",border:`1px solid ${view===v||(view==="detail"&&v==="browse")?T.accent+"55":T.border2}`,background:view===v||(view==="detail"&&v==="browse")?"rgba(120,100,255,.15)":"transparent",color:view===v||(view==="detail"&&v==="browse")?T.accentText:T.textMuted,fontSize:"13px",fontWeight:500,cursor:"pointer"}}>
               {label}
@@ -708,6 +759,116 @@ export default function App() {
             ))}
             {getArgs(selected, side).length === 0 && <p style={{color:T.textFaint,textAlign:"center",padding:"40px"}}>No arguments yet for this side.</p>}
           </div>
+        </div>
+      )}
+
+      {/* NEWS */}
+      {view === "news" && (
+        <div style={{maxWidth:"1080px",margin:"0 auto",padding:"40px 24px 60px"}}>
+          <div style={{marginBottom:"28px"}}>
+            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"28px",marginBottom:"6px",color:T.text}}>Debate News</h1>
+            <p style={{color:T.textMuted,fontSize:"14px"}}>Stay on top of current events across every debate theme.</p>
+          </div>
+
+          {/* Filters */}
+          <div style={{display:"flex",gap:"10px",flexWrap:"wrap",alignItems:"center",marginBottom:"24px"}}>
+            <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
+              {["All","Economics","Environment","Technology","International Relations","Criminal Justice","Human Rights","Health"].map(t => (
+                <button key={t} onClick={() => setNewsFilter(t)}
+                  style={{padding:"6px 14px",borderRadius:"8px",border:`1px solid ${newsFilter===t?T.accent:T.border2}`,background:newsFilter===t?"rgba(120,100,255,.15)":"transparent",color:newsFilter===t?T.accentText:T.textMuted,fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit"}}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Source filter */}
+          <div style={{display:"flex",gap:"6px",flexWrap:"wrap",marginBottom:"28px",paddingBottom:"20px",borderBottom:`1px solid ${T.border}`}}>
+            <button onClick={() => setNewsSourceFilter("All")}
+              style={{padding:"5px 12px",borderRadius:"20px",border:`1px solid ${newsSourceFilter==="All"?T.accent:T.border2}`,background:newsSourceFilter==="All"?"rgba(120,100,255,.15)":"transparent",color:newsSourceFilter==="All"?T.accentText:T.textMuted,fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>
+              All Sources
+            </button>
+            {NEWS_SOURCES.map(s => (
+              <button key={s.id} onClick={() => setNewsSourceFilter(s.id)}
+                style={{padding:"5px 12px",borderRadius:"20px",border:`1px solid ${newsSourceFilter===s.id?T.accent:T.border2}`,background:newsSourceFilter===s.id?"rgba(120,100,255,.15)":"transparent",color:newsSourceFilter===s.id?T.accentText:T.textMuted,fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>
+                {s.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Load button or articles */}
+          {!newsLoaded ? (
+            <div style={{textAlign:"center",padding:"60px 0"}}>
+              <p style={{color:T.textMuted,marginBottom:"20px",fontSize:"15px"}}>Ready to load the latest news from 10 sources.</p>
+              <button onClick={loadNews} disabled={newsLoading}
+                style={{padding:"13px 32px",borderRadius:"12px",border:"none",background:"linear-gradient(135deg,#7864ff,#b0a0ff)",color:"#fff",fontSize:"15px",fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                {newsLoading ? "Loading..." : "Load Today's News"}
+              </button>
+            </div>
+          ) : newsLoading ? (
+            <div style={{textAlign:"center",padding:"60px 0",color:T.textMuted}}>Loading articles...</div>
+          ) : (
+            <>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px"}}>
+                <p style={{fontSize:"13px",color:T.textMuted}}>
+                  {newsArticles.filter(a =>
+                    (newsFilter === "All" || a.themes.includes(newsFilter)) &&
+                    (newsSourceFilter === "All" || a.sourceId === newsSourceFilter)
+                  ).length} articles
+                </p>
+                <button onClick={loadNews}
+                  style={{padding:"6px 14px",borderRadius:"8px",border:`1px solid ${T.border2}`,background:"transparent",color:T.textMuted,fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>
+                  ↻ Refresh
+                </button>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:"14px"}}>
+                {newsArticles
+                  .filter(a =>
+                    (newsFilter === "All" || a.themes.includes(newsFilter)) &&
+                    (newsSourceFilter === "All" || a.sourceId === newsSourceFilter)
+                  )
+                  .map(article => (
+                    <a key={article.id} href={article.link} target="_blank" rel="noopener noreferrer"
+                      style={{textDecoration:"none",display:"block",background:T.surface,border:`1px solid ${T.border}`,borderRadius:"14px",padding:"20px",boxShadow:dark?"0 4px 20px rgba(0,0,0,.3)":"0 4px 20px rgba(0,0,0,.06)",transition:"transform .18s,box-shadow .18s",cursor:"pointer"}}
+                      onMouseEnter={e => { e.currentTarget.style.transform="translateY(-3px)"; e.currentTarget.style.boxShadow=dark?"0 14px 40px rgba(100,80,255,.15)":"0 14px 40px rgba(100,80,255,.1)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.transform=""; e.currentTarget.style.boxShadow=dark?"0 4px 20px rgba(0,0,0,.3)":"0 4px 20px rgba(0,0,0,.06)"; }}>
+                      {/* Source + themes */}
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
+                        <span style={{fontSize:"11px",fontWeight:700,color:T.accentText,textTransform:"uppercase",letterSpacing:".05em"}}>{article.source}</span>
+                        <div style={{display:"flex",gap:"4px"}}>
+                          {article.themes.slice(0,1).map(th => (
+                            <span key={th} style={{fontSize:"10px",padding:"2px 8px",borderRadius:"20px",background:`${TC[th]||"#333"}22`,color:TC[th]||T.textMuted,border:`1px solid ${TC[th]||"#333"}33`}}>{th}</span>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Title */}
+                      <p style={{fontSize:"14px",fontWeight:600,color:T.text,lineHeight:1.5,marginBottom:"8px"}}>{article.title}</p>
+                      {/* Description */}
+                      {article.description && (
+                        <p style={{fontSize:"13px",color:T.textMuted,lineHeight:1.6,marginBottom:"12px"}}>{article.description}{article.description.length >= 180 ? "..." : ""}</p>
+                      )}
+                      {/* Date + read more */}
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <span style={{fontSize:"11px",color:T.textFaint}}>
+                          {article.pubDate ? new Date(article.pubDate).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : ""}
+                        </span>
+                        <span style={{fontSize:"12px",color:T.accentText,fontWeight:600}}>Read → </span>
+                      </div>
+                    </a>
+                  ))
+                }
+              </div>
+              {newsArticles.filter(a =>
+                (newsFilter === "All" || a.themes.includes(newsFilter)) &&
+                (newsSourceFilter === "All" || a.sourceId === newsSourceFilter)
+              ).length === 0 && (
+                <div style={{textAlign:"center",padding:"60px",color:T.textFaint}}>
+                  <div style={{fontSize:"32px",marginBottom:"12px"}}>📰</div>
+                  <p>No articles found for this filter. Try a different theme or source.</p>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
