@@ -132,6 +132,7 @@ export default function App() {
   const [timerMotion, setTimerMotion] = useState("");
   const [timerCustom, setTimerCustom] = useState(15);
   const timerRef = React.useRef(null);
+  const [timerDismissed, setTimerDismissed] = useState(false);
 
   function formatTime(secs) {
     if (secs === null) return "--:--";
@@ -142,29 +143,25 @@ export default function App() {
 
   const FORMATS = {
     "WSDC": { duration: 30 * 60, phases: [
-      { at: 20*60, msg: "10 minutes in — lock in your team split and main arguments" },
-      { at: 10*60, msg: "Halfway — your case structure should be set by now" },
-      { at: 5*60,  msg: "10 minutes left — start writing your key lines and examples" },
-      { at: 2*60,  msg: "Final 2 minutes — last checks, know your first 30 seconds" },
-      { at: 0,     msg: "Time is up! Step into the round." },
+      { at: 20*60, msg: "10 min in — lock in your team split and main arguments" },
+      { at: 10*60, msg: "20 min in — case structure should be set. 10 minutes left" },
+      { at: 5*60,  msg: "25 min in — write your key lines and examples. 5 minutes left" },
+      { at: 2*60,  msg: "28 min in — final 2 minutes. Know your first 30 seconds cold" },
+      { at: 0,     msg: "30 min — Time is up! Step into the round." },
     ]},
     "CNDF": { duration: 15 * 60, phases: [
-      { at: 10*60, msg: "5 minutes in — your core arguments should be clear" },
-      { at: 5*60,  msg: "Halfway — start sharpening your examples and impacts" },
-      { at: 2*60,  msg: "Final 2 minutes — know your opening line cold" },
-      { at: 0,     msg: "Time is up! Step into the round." },
+      { at: 10*60, msg: "5 min in — core arguments should be clear. 10 minutes left" },
+      { at: 5*60,  msg: "10 min in — halfway. Sharpen your examples and impacts. 5 minutes left" },
+      { at: 2*60,  msg: "13 min in — final 2 minutes. Know your opening line cold" },
+      { at: 0,     msg: "15 min — Time is up! Step into the round." },
     ]},
     "BP": { duration: 15 * 60, phases: [
-      { at: 10*60, msg: "5 minutes in — split roles and lock your two arguments" },
-      { at: 5*60,  msg: "Halfway — refine your examples, think about extensions" },
-      { at: 2*60,  msg: "Final 2 minutes — know exactly who says what" },
-      { at: 0,     msg: "Time is up! Step into the round." },
+      { at: 10*60, msg: "5 min in — split roles and lock your two arguments. 10 minutes left" },
+      { at: 5*60,  msg: "10 min in — halfway. Refine examples, think about extensions. 5 minutes left" },
+      { at: 2*60,  msg: "13 min in — final 2 minutes. Know exactly who says what" },
+      { at: 0,     msg: "15 min — Time is up! Step into the round." },
     ]},
-    "Custom": { duration: null, phases: [
-      { at: null, msg: "Two thirds done — your arguments should be set" },
-      { at: null, msg: "One third left — start tightening your notes" },
-      { at: 0,    msg: "Time is up! Step into the round." },
-    ]},
+    "Custom": { duration: null, phases: [] },
   };
 
   useEffect(() => {
@@ -185,9 +182,9 @@ export default function App() {
       const elapsed = duration - remaining;
       const phases = timerFormat === "Custom"
         ? [
-            { triggerElapsed: Math.floor(duration / 3),     msg: "Two thirds done — your arguments should be set" },
-            { triggerElapsed: Math.floor(duration * 2 / 3), msg: "One third left — start tightening your notes" },
-            { triggerElapsed: duration,                      msg: "Time is up! Step into the round." },
+            { triggerElapsed: Math.floor(duration / 3),     msg: `${Math.floor(timerCustom/3)} min in — arguments should be set. ${Math.ceil(timerCustom*2/3)} minutes left` },
+            { triggerElapsed: Math.floor(duration * 2 / 3), msg: `${Math.floor(timerCustom*2/3)} min in — tighten your notes. ${Math.ceil(timerCustom/3)} minutes left` },
+            { triggerElapsed: duration,                      msg: `${timerCustom} min — Time is up! Step into the round.` },
           ]
         : FORMATS[timerFormat].phases.map(p => ({ triggerElapsed: duration - p.at, msg: p.msg }));
 
@@ -216,10 +213,11 @@ export default function App() {
     setTimerEndTime(Date.now() + duration * 1000);
     setTimerRemaining(duration);
     setTimerRunning(true);
+    setTimerDismissed(false);
     showToast("Timer started!");
   }
 
-  function stopTimer() { setTimerRunning(false); setTimerRemaining(null); setTimerEndTime(null); }
+  function stopTimer() { setTimerRunning(false); setTimerRemaining(null); setTimerEndTime(null); setTimerDismissed(false); }
 
   function timerProgress() {
     if (!timerRemaining) return 0;
@@ -537,6 +535,33 @@ export default function App() {
       {toast && (
         <div style={{position:"fixed",bottom:"24px",left:"50%",transform:"translateX(-50%)",background:toast.isError?(dark?"#3a1e1e":"#fff0f0"):(dark?"#1e3a2a":"#f0fff4"),border:`1px solid ${toast.isError?"#ff707066":"#40c09066"}`,borderRadius:"10px",padding:"12px 24px",fontSize:"14px",color:toast.isError?"#ff7070":"#2a8a5a",zIndex:999,boxShadow:"0 8px 32px rgba(0,0,0,.15)",whiteSpace:"nowrap"}}>
           {toast.msg}
+        </div>
+      )}
+
+      {/* FLOATING TIMER WIDGET */}
+      {timerRunning && !timerDismissed && (
+        <div style={{position:"fixed",bottom:"24px",right:"24px",zIndex:1000,background:dark?"#111125":"#ffffff",border:`2px solid ${timerRemaining <= 60 ? "#ff7070" : timerRemaining <= 300 ? "#ffaa44" : "#7864ff"}`,borderRadius:"16px",padding:"14px 18px",boxShadow:"0 8px 32px rgba(0,0,0,.3)",minWidth:"180px",fontFamily:"'DM Sans',sans-serif"}}>
+          {/* Header row */}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
+            <span style={{fontSize:"11px",fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",color:timerRemaining<=60?"#ff7070":timerRemaining<=300?"#ffaa44":"#a89aff"}}>
+              ⏱ {timerFormat} Prep{timerSide ? ` · ${timerSide === "Proposition" ? "Prop" : "Opp"}` : ""}
+            </span>
+            <button onClick={() => setTimerDismissed(true)} style={{background:"none",border:"none",color:dark?"#555":"#aaa",cursor:"pointer",fontSize:"16px",lineHeight:1,padding:"0 0 0 8px"}}>×</button>
+          </div>
+          {/* Big time */}
+          <div style={{fontSize:"42px",fontWeight:700,fontFamily:"monospace",letterSpacing:"2px",color:timerRemaining<=60?"#ff7070":timerRemaining<=300?"#ffaa44":dark?"#f0f0fa":"#1a1a2e",lineHeight:1,marginBottom:"8px"}}>
+            {formatTime(timerRemaining)}
+          </div>
+          {/* Progress bar */}
+          <div style={{background:dark?"#1e1e3a":"#eeeeee",borderRadius:"4px",height:"4px",overflow:"hidden"}}>
+            <div style={{height:"100%",borderRadius:"4px",background:timerRemaining<=60?"#ff7070":timerRemaining<=300?"#ffaa44":"linear-gradient(90deg,#7864ff,#b0a0ff)",width:`${timerProgress()}%`,transition:"width .5s linear"}} />
+          </div>
+          {/* Motion snippet */}
+          {timerMotion && (
+            <p style={{fontSize:"11px",color:dark?"#8080aa":"#888",marginTop:"8px",lineHeight:1.4,maxWidth:"200px",overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>
+              {timerMotion}
+            </p>
+          )}
         </div>
       )}
 
