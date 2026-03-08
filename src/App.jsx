@@ -123,6 +123,71 @@ export default function App() {
   const [apiKeySet, setApiKeySet] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState("");
 
+  // Timer state
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [timerEndTime, setTimerEndTime] = useState(null);
+  const [timerRemaining, setTimerRemaining] = useState(null);
+  const [timerFormat, setTimerFormat] = useState("WSDC");
+  const [timerSide, setTimerSide] = useState("Proposition");
+  const [timerMotion, setTimerMotion] = useState("");
+  const [timerCustom, setTimerCustom] = useState(15);
+  const timerRef = React.useRef(null);
+
+  const FORMATS = {
+    "WSDC":   { duration: 30 * 60, phases: [{ at: 25*60, msg: "25 min gone — finalize your case structure" }, { at: 20*60, msg: "20 min gone — arguments should be set" }, { at: 10*60, msg: "10 minutes left" }, { at: 5*60, msg: "5 minutes left — wrap up notes" }, { at: 0, msg: "Time is up!" }] },
+    "CNDF":   { duration: 15 * 60, phases: [{ at: 10*60, msg: "10 min gone — arguments should be set" }, { at: 5*60, msg: "5 minutes left" }, { at: 2*60, msg: "2 minutes left — wrap up" }, { at: 0, msg: "Time is up!" }] },
+    "BP":     { duration: 15 * 60, phases: [{ at: 10*60, msg: "10 min gone — arguments should be set" }, { at: 5*60, msg: "5 minutes left" }, { at: 2*60, msg: "2 minutes left — wrap up" }, { at: 0, msg: "Time is up!" }] },
+    "Custom": { duration: null, phases: [{ at: null, msg: "Halfway done" }, { at: null, msg: "5 minutes left" }, { at: 0, msg: "Time is up!" }] },
+  };
+
+  useEffect(() => {
+    if (!timerRunning) { clearInterval(timerRef.current); return; }
+    timerRef.current = setInterval(() => {
+      const remaining = Math.max(0, Math.round((timerEndTime - Date.now()) / 1000));
+      setTimerRemaining(remaining);
+      // Phase alerts via notification
+      const duration = timerFormat === "Custom" ? timerCustom * 60 : FORMATS[timerFormat].duration;
+      const elapsed = duration - remaining;
+      FORMATS[timerFormat === "Custom" ? "CNDF" : timerFormat].phases.forEach(phase => {
+        const triggerAt = timerFormat === "Custom"
+          ? (phase.at === 0 ? 0 : phase.at)
+          : phase.at;
+        if (Math.abs(elapsed - (duration - triggerAt)) < 1) {
+          if (Notification.permission === "granted") {
+            new Notification("DebateVault Timer", { body: phase.msg, icon: "/favicon.ico" });
+          }
+          showToast(phase.msg);
+        }
+      });
+      if (remaining === 0) { setTimerRunning(false); clearInterval(timerRef.current); }
+    }, 500);
+    return () => clearInterval(timerRef.current);
+  }, [timerRunning, timerEndTime]);
+
+  function startTimer() {
+    const duration = timerFormat === "Custom" ? timerCustom * 60 : FORMATS[timerFormat].duration;
+    if (Notification.permission === "default") Notification.requestPermission();
+    setTimerEndTime(Date.now() + duration * 1000);
+    setTimerRemaining(duration);
+    setTimerRunning(true);
+    showToast("Timer started!");
+  }
+
+  function stopTimer() { setTimerRunning(false); setTimerRemaining(null); setTimerEndTime(null); }
+
+  function formatTime(secs) {
+    if (secs === null) return "--:--";
+    const m = Math.floor(secs / 60).toString().padStart(2, "0");
+    const s = (secs % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  }
+
+  function timerProgress() {
+    if (!timerRemaining) return 0;
+    const duration = timerFormat === "Custom" ? timerCustom * 60 : FORMATS[timerFormat].duration;
+    return (timerRemaining / duration) * 100;
+  }
+
   const INP = {width:"100%",padding:"10px 14px",background:T.surface2,border:`1px solid ${T.border2}`,borderRadius:"8px",color:T.text,fontSize:"14px",fontFamily:"inherit"};
 
   // Keep body background in sync with theme
@@ -457,7 +522,7 @@ export default function App() {
             {dark ? "☀️" : "🌙"}
           </button>
 
-          {[["browse","Browse"],["admin","Admin ✦"]].map(([v,label]) => (
+          {[["browse","Browse"],["timer","⏱ Timer"],["admin","Admin ✦"]].map(([v,label]) => (
             <button key={v} onClick={() => { setView(v); if (v==="browse") clearSearch(); }}
               style={{padding:"7px 16px",borderRadius:"8px",border:`1px solid ${view===v||(view==="detail"&&v==="browse")?T.accent+"55":T.border2}`,background:view===v||(view==="detail"&&v==="browse")?"rgba(120,100,255,.15)":"transparent",color:view===v||(view==="detail"&&v==="browse")?T.accentText:T.textMuted,fontSize:"13px",fontWeight:500,cursor:"pointer"}}>
               {label}
@@ -579,6 +644,100 @@ export default function App() {
             ))}
             {getArgs(selected, side).length === 0 && <p style={{color:T.textFaint,textAlign:"center",padding:"40px"}}>No arguments yet for this side.</p>}
           </div>
+        </div>
+      )}
+
+      {/* TIMER */}
+      {view === "timer" && (
+        <div style={{maxWidth:"520px",margin:"0 auto",padding:"40px 24px 60px"}}>
+          <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"28px",marginBottom:"6px",color:T.text}}>Prep Timer</h1>
+          <p style={{color:T.textMuted,fontSize:"14px",marginBottom:"28px"}}>Runs in the background even when you switch tabs.</p>
+
+          {!timerRunning ? (
+            <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
+              {/* Format presets */}
+              <div>
+                <label style={{display:"block",fontSize:"11px",color:T.textMuted,fontWeight:600,textTransform:"uppercase",letterSpacing:".06em",marginBottom:"8px"}}>Format</label>
+                <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
+                  {Object.keys(FORMATS).map(f => (
+                    <button key={f} onClick={() => setTimerFormat(f)}
+                      style={{padding:"8px 18px",borderRadius:"8px",border:`1px solid ${timerFormat===f?T.accent:T.border2}`,background:timerFormat===f?"rgba(120,100,255,.15)":"transparent",color:timerFormat===f?T.accentText:T.textMuted,fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+                      {f === "WSDC" ? "WSDC (30 min)" : f === "CNDF" ? "CNDF (15 min)" : f === "BP" ? "BP (15 min)" : "Custom"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom duration */}
+              {timerFormat === "Custom" && (
+                <div>
+                  <label style={{display:"block",fontSize:"11px",color:T.textMuted,fontWeight:600,textTransform:"uppercase",letterSpacing:".06em",marginBottom:"8px"}}>Duration (minutes)</label>
+                  <input type="number" min="1" max="60" value={timerCustom} onChange={e => setTimerCustom(Number(e.target.value))}
+                    style={{width:"120px",padding:"10px 14px",background:T.surface2,border:`1px solid ${T.border2}`,borderRadius:"8px",color:T.text,fontSize:"16px",fontFamily:"inherit"}} />
+                </div>
+              )}
+
+              {/* Side selector */}
+              <div>
+                <label style={{display:"block",fontSize:"11px",color:T.textMuted,fontWeight:600,textTransform:"uppercase",letterSpacing:".06em",marginBottom:"8px"}}>Side (optional)</label>
+                <div style={{display:"flex",gap:"8px"}}>
+                  {["Proposition","Opposition",""].map((s,i) => (
+                    <button key={i} onClick={() => setTimerSide(s)}
+                      style={{padding:"8px 18px",borderRadius:"8px",border:`1px solid ${timerSide===s?(s==="Proposition"?"#40c09066":s==="Opposition"?"#ff707066":T.border2):T.border2}`,background:timerSide===s?(s==="Proposition"?"rgba(40,160,120,.12)":s==="Opposition"?"rgba(255,100,100,.12)":"rgba(120,100,255,.1)"):"transparent",color:timerSide===s?(s==="Proposition"?"#40c090":s==="Opposition"?"#ff7070":T.accentText):T.textMuted,fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+                      {s || "No side"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Motion input */}
+              <div>
+                <label style={{display:"block",fontSize:"11px",color:T.textMuted,fontWeight:600,textTransform:"uppercase",letterSpacing:".06em",marginBottom:"8px"}}>Motion (optional)</label>
+                <input value={timerMotion} onChange={e => setTimerMotion(e.target.value)}
+                  placeholder="Paste or type the motion here..."
+                  style={{width:"100%",padding:"10px 14px",background:T.surface2,border:`1px solid ${T.border2}`,borderRadius:"8px",color:T.text,fontSize:"14px",fontFamily:"inherit"}} />
+              </div>
+
+              <button onClick={startTimer}
+                style={{padding:"14px",borderRadius:"12px",border:"none",background:"linear-gradient(135deg,#7864ff,#b0a0ff)",color:"#fff",fontSize:"16px",fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginTop:"4px"}}>
+                Start Prep
+              </button>
+            </div>
+          ) : (
+            <div style={{display:"flex",flexDirection:"column",gap:"20px"}}>
+              {/* Motion display */}
+              {timerMotion && (
+                <div style={{background:T.surface2,border:`1px solid ${T.border}`,borderRadius:"12px",padding:"16px"}}>
+                  <p style={{fontSize:"11px",color:T.textMuted,fontWeight:600,textTransform:"uppercase",letterSpacing:".06em",marginBottom:"6px"}}>Motion</p>
+                  <p style={{fontSize:"14px",color:T.text,lineHeight:1.55}}>{timerMotion}</p>
+                </div>
+              )}
+
+              {/* Side badge */}
+              {timerSide && (
+                <div style={{display:"inline-flex",alignItems:"center",padding:"6px 16px",borderRadius:"20px",background:timerSide==="Proposition"?"rgba(40,160,120,.12)":"rgba(255,100,100,.12)",border:`1px solid ${timerSide==="Proposition"?"#40c09066":"#ff707066"}`,width:"fit-content"}}>
+                  <span style={{fontSize:"13px",fontWeight:600,color:timerSide==="Proposition"?"#40c090":"#ff7070"}}>{timerSide}</span>
+                </div>
+              )}
+
+              {/* Big clock */}
+              <div style={{textAlign:"center",padding:"32px",background:T.surface,border:`1px solid ${T.border}`,borderRadius:"16px"}}>
+                <div style={{fontSize:"72px",fontWeight:700,fontFamily:"monospace",color:timerRemaining <= 60?"#ff7070":timerRemaining <= 300?"#ffaa44":T.text,lineHeight:1,marginBottom:"16px",letterSpacing:"2px"}}>
+                  {formatTime(timerRemaining)}
+                </div>
+                {/* Progress bar */}
+                <div style={{background:T.surface2,borderRadius:"8px",height:"8px",overflow:"hidden"}}>
+                  <div style={{height:"100%",borderRadius:"8px",background:timerRemaining<=60?"#ff7070":timerRemaining<=300?"#ffaa44":"linear-gradient(90deg,#7864ff,#b0a0ff)",width:`${timerProgress()}%`,transition:"width .5s linear"}} />
+                </div>
+                <p style={{fontSize:"12px",color:T.textMuted,marginTop:"10px"}}>{timerFormat} prep{timerSide ? ` · ${timerSide}` : ""}</p>
+              </div>
+
+              <button onClick={stopTimer}
+                style={{padding:"12px",borderRadius:"10px",border:`1px solid #cc444444`,background:"transparent",color:"#cc4444",fontSize:"14px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+                Stop Timer
+              </button>
+            </div>
+          )}
         </div>
       )}
 
