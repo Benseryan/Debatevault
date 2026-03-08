@@ -544,15 +544,26 @@ export default function App() {
         const data = await res.json();
         if (data.items) {
           data.items.slice(0, 8).forEach(item => {
+            // Extract image from enclosure, media content, or description img tag
+            let image = null;
+            if (item.enclosure && item.enclosure.link) {
+              image = item.enclosure.link;
+            } else if (item.thumbnail) {
+              image = item.thumbnail;
+            } else {
+              const imgMatch = (item.description || "").match(/<img[^>]+src=["']([^"']+)["']/i);
+              if (imgMatch) image = imgMatch[1];
+            }
             results.push({
               id: item.guid || item.link,
               title: item.title,
-              description: (item.description || "").replace(/<[^>]+>/g, "").slice(0, 180),
+              description: (item.description || "").replace(/<[^>]+>/g, "").slice(0, 160),
               link: item.link,
               pubDate: item.pubDate,
               source: source.name,
               sourceId: source.id,
               themes: source.themes,
+              image,
             });
           });
         }
@@ -860,30 +871,42 @@ export default function App() {
                   )
                   .map(article => (
                     <a key={article.id} href={article.link} target="_blank" rel="noopener noreferrer"
-                      style={{textDecoration:"none",display:"block",background:T.surface,border:`1px solid ${dark?"#2a2a50":"#d0d0c8"}`,borderRadius:"14px",padding:"20px",boxShadow:dark?"0 4px 24px rgba(0,0,0,.5)":"0 4px 24px rgba(0,0,0,.1)",transition:"transform .18s,box-shadow .18s",cursor:"pointer"}}
+                      style={{textDecoration:"none",display:"block",background:T.surface,border:`1px solid ${dark?"#2a2a50":"#d0d0c8"}`,borderRadius:"14px",overflow:"hidden",boxShadow:dark?"0 4px 24px rgba(0,0,0,.5)":"0 4px 24px rgba(0,0,0,.1)",transition:"transform .18s,box-shadow .18s",cursor:"pointer"}}
                       onMouseEnter={e => { e.currentTarget.style.transform="translateY(-3px)"; e.currentTarget.style.boxShadow=dark?"0 14px 40px rgba(100,80,255,.15)":"0 14px 40px rgba(100,80,255,.1)"; }}
                       onMouseLeave={e => { e.currentTarget.style.transform=""; e.currentTarget.style.boxShadow=dark?"0 4px 20px rgba(0,0,0,.3)":"0 4px 20px rgba(0,0,0,.06)"; }}>
-                      {/* Source + themes */}
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
-                        <span style={{fontSize:"11px",fontWeight:700,color:T.accentText,textTransform:"uppercase",letterSpacing:".05em"}}>{article.source}</span>
-                        <div style={{display:"flex",gap:"4px"}}>
+                      {/* Image */}
+                      {article.image ? (
+                        <div style={{width:"100%",height:"160px",overflow:"hidden",background:T.surface2}}>
+                          <img src={article.image} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
+                            onError={e => { e.target.parentElement.style.display="none"; }} />
+                        </div>
+                      ) : (
+                        <div style={{width:"100%",height:"100px",background:`linear-gradient(135deg,${TC[article.themes[0]]||"#7864ff"}22,${TC[article.themes[0]]||"#7864ff"}44)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"32px"}}>
+                          📰
+                        </div>
+                      )}
+                      {/* Content */}
+                      <div style={{padding:"16px"}}>
+                        {/* Source + theme */}
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
+                          <span style={{fontSize:"11px",fontWeight:700,color:T.accentText,textTransform:"uppercase",letterSpacing:".05em"}}>{article.source}</span>
                           {article.themes.slice(0,1).map(th => (
                             <span key={th} style={{fontSize:"10px",padding:"2px 8px",borderRadius:"20px",background:`${TC[th]||"#333"}22`,color:TC[th]||T.textMuted,border:`1px solid ${TC[th]||"#333"}33`}}>{th}</span>
                           ))}
                         </div>
-                      </div>
-                      {/* Title */}
-                      <p style={{fontSize:"14px",fontWeight:600,color:T.text,lineHeight:1.5,marginBottom:"8px"}}>{article.title}</p>
-                      {/* Description */}
-                      {article.description && (
-                        <p style={{fontSize:"13px",color:T.textMuted,lineHeight:1.6,marginBottom:"12px"}}>{article.description}{article.description.length >= 180 ? "..." : ""}</p>
-                      )}
-                      {/* Date + read more */}
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                        <span style={{fontSize:"11px",color:T.textFaint}}>
-                          {article.pubDate ? new Date(article.pubDate).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : ""}
-                        </span>
-                        <span style={{fontSize:"12px",color:T.accentText,fontWeight:600}}>Read → </span>
+                        {/* Title */}
+                        <p style={{fontSize:"14px",fontWeight:600,color:T.text,lineHeight:1.5,marginBottom:"6px"}}>{article.title}</p>
+                        {/* Description */}
+                        {article.description && (
+                          <p style={{fontSize:"12px",color:T.textMuted,lineHeight:1.6,marginBottom:"12px"}}>{article.description}{article.description.length >= 160 ? "..." : ""}</p>
+                        )}
+                        {/* Date + read more */}
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                          <span style={{fontSize:"11px",color:T.textFaint}}>
+                            {article.pubDate ? new Date(article.pubDate).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : ""}
+                          </span>
+                          <span style={{fontSize:"12px",color:T.accentText,fontWeight:600}}>Read →</span>
+                        </div>
                       </div>
                     </a>
                   ))
@@ -1244,4 +1267,3 @@ function Lbl({ label, color, children }) {
     </div>
   );
 }
-
