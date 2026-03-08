@@ -145,7 +145,6 @@ export default function App() {
   const [timerMotion, setTimerMotion] = useState("");
   const [timerCustom, setTimerCustom] = useState(15);
   const timerRef = React.useRef(null);
-  const [timerDismissed, setTimerDismissed] = useState(false);
 
   // News state
   const [newsArticles, setNewsArticles] = useState([]);
@@ -234,11 +233,10 @@ export default function App() {
     setTimerEndTime(Date.now() + duration * 1000);
     setTimerRemaining(duration);
     setTimerRunning(true);
-    setTimerDismissed(false);
     showToast("Timer started!");
   }
 
-  function stopTimer() { setTimerRunning(false); setTimerRemaining(null); setTimerEndTime(null); setTimerDismissed(false); }
+  function stopTimer() { setTimerRunning(false); setTimerRemaining(null); setTimerEndTime(null); }
 
   function timerProgress() {
     if (!timerRemaining) return 0;
@@ -589,33 +587,6 @@ export default function App() {
         </div>
       )}
 
-      {/* FLOATING TIMER WIDGET */}
-      {timerRunning && !timerDismissed && (
-        <div style={{position:"fixed",bottom:"24px",right:"24px",zIndex:1000,background:dark?"#111125":"#ffffff",border:`2px solid ${timerRemaining <= 60 ? "#ff7070" : timerRemaining <= 300 ? "#ffaa44" : "#7864ff"}`,borderRadius:"16px",padding:"14px 18px",boxShadow:"0 8px 32px rgba(0,0,0,.3)",minWidth:"180px",fontFamily:"'DM Sans',sans-serif"}}>
-          {/* Header row */}
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
-            <span style={{fontSize:"11px",fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",color:timerRemaining<=60?"#ff7070":timerRemaining<=300?"#ffaa44":"#a89aff"}}>
-              ⏱ {timerFormat} Prep{timerSide ? ` · ${timerSide === "Proposition" ? "Prop" : "Opp"}` : ""}
-            </span>
-            <button onClick={() => setTimerDismissed(true)} style={{background:"none",border:"none",color:dark?"#555":"#aaa",cursor:"pointer",fontSize:"16px",lineHeight:1,padding:"0 0 0 8px"}}>×</button>
-          </div>
-          {/* Big time */}
-          <div style={{fontSize:"42px",fontWeight:700,fontFamily:"monospace",letterSpacing:"2px",color:timerRemaining<=60?"#ff7070":timerRemaining<=300?"#ffaa44":dark?"#f0f0fa":"#1a1a2e",lineHeight:1,marginBottom:"8px"}}>
-            {formatTime(timerRemaining)}
-          </div>
-          {/* Progress bar */}
-          <div style={{background:dark?"#1e1e3a":"#eeeeee",borderRadius:"4px",height:"4px",overflow:"hidden"}}>
-            <div style={{height:"100%",borderRadius:"4px",background:timerRemaining<=60?"#ff7070":timerRemaining<=300?"#ffaa44":"linear-gradient(90deg,#7864ff,#b0a0ff)",width:`${timerProgress()}%`,transition:"width .5s linear"}} />
-          </div>
-          {/* Motion snippet */}
-          {timerMotion && (
-            <p style={{fontSize:"11px",color:dark?"#8080aa":"#888",marginTop:"8px",lineHeight:1.4,maxWidth:"200px",overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>
-              {timerMotion}
-            </p>
-          )}
-        </div>
-      )}
-
       {loadError && (
         <div style={{background:dark?"#2a1a00":"#fff8ee",borderBottom:`1px solid ${dark?"#7a520033":"#f0c060"}`,padding:"8px 24px",textAlign:"center",fontSize:"12px",color:dark?"#ffaa44":"#a07000"}}>
           Could not connect to database. Check your internet connection.
@@ -697,7 +668,7 @@ export default function App() {
 
           <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 60px",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(290px,1fr))",gap:"14px"}}>
             {displayed.map(m => (
-              <div key={m.id} className="card" onClick={() => openMotion(m)} style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:"16px",padding:"22px",boxShadow:dark?"0 4px 20px rgba(0,0,0,.3)":"0 4px 20px rgba(0,0,0,.06)"}}>
+              <div key={m.id} className="card" onClick={() => openMotion(m)} style={{background:T.surface,border:`1px solid ${dark?"#2a2a50":"#d0d0c8"}`,borderRadius:"16px",padding:"22px",boxShadow:dark?"0 4px 24px rgba(0,0,0,.5)":"0 4px 24px rgba(0,0,0,.1)"}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:"12px"}}>
                   <span className="pill" style={{background:`${TC[m.theme]||"#333"}22`,color:TC[m.theme]||T.textMuted,border:`1px solid ${TC[m.theme]||"#333"}44`}}>{m.subtheme || m.theme}</span>
                   <span className="pill" style={{background:`${DC[m.difficulty]}22`,color:DC[m.difficulty],border:`1px solid ${DC[m.difficulty]}44`}}>{m.difficulty}</span>
@@ -749,7 +720,7 @@ export default function App() {
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
             {getArgs(selected, side).map((arg, i) => (
-              <div key={i} style={{background:T.surface,border:`1px solid ${side==="prop"?T.propBorder:T.oppBorder}`,borderRadius:"14px",padding:"22px"}}>
+              <div key={i} style={{background:T.surface,border:`2px solid ${side==="prop"?(dark?"#1e5c36":"#a8d8b8"):(dark?"#5c1e1e":"#d8a8a8")}`,borderRadius:"14px",padding:"22px",boxShadow:dark?"0 4px 20px rgba(0,0,0,.4)":"0 4px 16px rgba(0,0,0,.08)"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"12px",marginBottom:"10px"}}>
                   <h3 style={{fontSize:"15px",fontWeight:600,color:T.text,lineHeight:1.4}}>{arg.name}</h3>
                   <span style={{padding:"3px 10px",borderRadius:"20px",fontSize:"11px",fontWeight:500,flexShrink:0,background:arg.type==="Principled"?"rgba(120,100,255,.15)":"rgba(40,160,120,.15)",color:arg.type==="Principled"?"#8060ee":"#2a9a70",border:`1px solid ${arg.type==="Principled"?"rgba(120,100,255,.3)":"rgba(40,160,120,.3)"}`}}>{arg.type}</span>
@@ -829,7 +800,7 @@ export default function App() {
                   )
                   .map(article => (
                     <a key={article.id} href={article.link} target="_blank" rel="noopener noreferrer"
-                      style={{textDecoration:"none",display:"block",background:T.surface,border:`1px solid ${T.border}`,borderRadius:"14px",padding:"20px",boxShadow:dark?"0 4px 20px rgba(0,0,0,.3)":"0 4px 20px rgba(0,0,0,.06)",transition:"transform .18s,box-shadow .18s",cursor:"pointer"}}
+                      style={{textDecoration:"none",display:"block",background:T.surface,border:`1px solid ${dark?"#2a2a50":"#d0d0c8"}`,borderRadius:"14px",padding:"20px",boxShadow:dark?"0 4px 24px rgba(0,0,0,.5)":"0 4px 24px rgba(0,0,0,.1)",transition:"transform .18s,box-shadow .18s",cursor:"pointer"}}
                       onMouseEnter={e => { e.currentTarget.style.transform="translateY(-3px)"; e.currentTarget.style.boxShadow=dark?"0 14px 40px rgba(100,80,255,.15)":"0 14px 40px rgba(100,80,255,.1)"; }}
                       onMouseLeave={e => { e.currentTarget.style.transform=""; e.currentTarget.style.boxShadow=dark?"0 4px 20px rgba(0,0,0,.3)":"0 4px 20px rgba(0,0,0,.06)"; }}>
                       {/* Source + themes */}
@@ -946,7 +917,7 @@ export default function App() {
               )}
 
               {/* Big clock */}
-              <div style={{textAlign:"center",padding:"32px",background:T.surface,border:`1px solid ${T.border}`,borderRadius:"16px"}}>
+              <div style={{textAlign:"center",padding:"32px",background:T.surface,border:`2px solid ${dark?"#2a2a50":"#d0d0c8"}`,borderRadius:"16px",boxShadow:dark?"0 4px 24px rgba(0,0,0,.5)":"0 4px 24px rgba(0,0,0,.1)"}}>
                 <div style={{fontSize:"72px",fontWeight:700,fontFamily:"monospace",color:timerRemaining <= 60?"#ff7070":timerRemaining <= 300?"#ffaa44":T.text,lineHeight:1,marginBottom:"16px",letterSpacing:"2px"}}>
                   {formatTime(timerRemaining)}
                 </div>
@@ -1061,7 +1032,7 @@ export default function App() {
                     <button onClick={exportData} style={{padding:"9px 20px",borderRadius:"8px",border:`1px solid ${T.accent}55`,background:"rgba(120,100,255,.15)",color:T.accentText,fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>Export ({motions.length})</button>
                   </div>
                   {motions.map(m => (
-                    <div key={m.id} style={{display:"flex",alignItems:"center",gap:"12px",padding:"14px 18px",background:T.surface,border:`1px solid ${T.border}`,borderRadius:"10px"}}>
+                    <div key={m.id} style={{display:"flex",alignItems:"center",gap:"12px",padding:"14px 18px",background:T.surface,border:`1px solid ${dark?"#2a2a50":"#d0d0c8"}`,borderRadius:"10px",boxShadow:dark?"0 2px 12px rgba(0,0,0,.3)":"0 2px 12px rgba(0,0,0,.07)"}}>
                       <div style={{flex:1,minWidth:0}}>
                         <p style={{fontSize:"14px",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:"3px",color:T.text}}>{m.motion}</p>
                         <p style={{fontSize:"12px",color:T.textMuted}}>{m.theme} · {getArgs(m,"prop").length} prop · {getArgs(m,"opp").length} opp</p>
