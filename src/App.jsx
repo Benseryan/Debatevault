@@ -133,33 +133,79 @@ export default function App() {
   const [timerCustom, setTimerCustom] = useState(15);
   const timerRef = React.useRef(null);
 
+  function formatTime(secs) {
+    if (secs === null) return "--:--";
+    const m = Math.floor(secs / 60).toString().padStart(2, "0");
+    const s = (secs % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  }
+
   const FORMATS = {
-    "WSDC":   { duration: 30 * 60, phases: [{ at: 25*60, msg: "25 min gone — finalize your case structure" }, { at: 20*60, msg: "20 min gone — arguments should be set" }, { at: 10*60, msg: "10 minutes left" }, { at: 5*60, msg: "5 minutes left — wrap up notes" }, { at: 0, msg: "Time is up!" }] },
-    "CNDF":   { duration: 15 * 60, phases: [{ at: 10*60, msg: "10 min gone — arguments should be set" }, { at: 5*60, msg: "5 minutes left" }, { at: 2*60, msg: "2 minutes left — wrap up" }, { at: 0, msg: "Time is up!" }] },
-    "BP":     { duration: 15 * 60, phases: [{ at: 10*60, msg: "10 min gone — arguments should be set" }, { at: 5*60, msg: "5 minutes left" }, { at: 2*60, msg: "2 minutes left — wrap up" }, { at: 0, msg: "Time is up!" }] },
-    "Custom": { duration: null, phases: [{ at: null, msg: "Halfway done" }, { at: null, msg: "5 minutes left" }, { at: 0, msg: "Time is up!" }] },
+    "WSDC": { duration: 30 * 60, phases: [
+      { at: 20*60, msg: "10 minutes in — lock in your team split and main arguments" },
+      { at: 10*60, msg: "Halfway — your case structure should be set by now" },
+      { at: 5*60,  msg: "10 minutes left — start writing your key lines and examples" },
+      { at: 2*60,  msg: "Final 2 minutes — last checks, know your first 30 seconds" },
+      { at: 0,     msg: "Time is up! Step into the round." },
+    ]},
+    "CNDF": { duration: 15 * 60, phases: [
+      { at: 10*60, msg: "5 minutes in — your core arguments should be clear" },
+      { at: 5*60,  msg: "Halfway — start sharpening your examples and impacts" },
+      { at: 2*60,  msg: "Final 2 minutes — know your opening line cold" },
+      { at: 0,     msg: "Time is up! Step into the round." },
+    ]},
+    "BP": { duration: 15 * 60, phases: [
+      { at: 10*60, msg: "5 minutes in — split roles and lock your two arguments" },
+      { at: 5*60,  msg: "Halfway — refine your examples, think about extensions" },
+      { at: 2*60,  msg: "Final 2 minutes — know exactly who says what" },
+      { at: 0,     msg: "Time is up! Step into the round." },
+    ]},
+    "Custom": { duration: null, phases: [
+      { at: null, msg: "Two thirds done — your arguments should be set" },
+      { at: null, msg: "One third left — start tightening your notes" },
+      { at: 0,    msg: "Time is up! Step into the round." },
+    ]},
   };
 
   useEffect(() => {
-    if (!timerRunning) { clearInterval(timerRef.current); return; }
+    if (!timerRunning) {
+      clearInterval(timerRef.current);
+      document.title = "DebateVault";
+      return;
+    }
     timerRef.current = setInterval(() => {
       const remaining = Math.max(0, Math.round((timerEndTime - Date.now()) / 1000));
       setTimerRemaining(remaining);
-      // Phase alerts via notification
+
+      // Always update tab title so it's visible from other tabs
+      document.title = `⏱ ${formatTime(remaining)} — DebateVault`;
+
+      // Phase alerts
       const duration = timerFormat === "Custom" ? timerCustom * 60 : FORMATS[timerFormat].duration;
       const elapsed = duration - remaining;
-      FORMATS[timerFormat === "Custom" ? "CNDF" : timerFormat].phases.forEach(phase => {
-        const triggerAt = timerFormat === "Custom"
-          ? (phase.at === 0 ? 0 : phase.at)
-          : phase.at;
-        if (Math.abs(elapsed - (duration - triggerAt)) < 1) {
+      const phases = timerFormat === "Custom"
+        ? [
+            { triggerElapsed: Math.floor(duration / 3),     msg: "Two thirds done — your arguments should be set" },
+            { triggerElapsed: Math.floor(duration * 2 / 3), msg: "One third left — start tightening your notes" },
+            { triggerElapsed: duration,                      msg: "Time is up! Step into the round." },
+          ]
+        : FORMATS[timerFormat].phases.map(p => ({ triggerElapsed: duration - p.at, msg: p.msg }));
+
+      phases.forEach(phase => {
+        if (Math.abs(elapsed - phase.triggerElapsed) < 1) {
           if (Notification.permission === "granted") {
-            new Notification("DebateVault Timer", { body: phase.msg, icon: "/favicon.ico" });
+            new Notification("⏱ DebateVault Timer", { body: phase.msg });
           }
           showToast(phase.msg);
         }
       });
-      if (remaining === 0) { setTimerRunning(false); clearInterval(timerRef.current); }
+
+      if (remaining === 0) {
+        setTimerRunning(false);
+        clearInterval(timerRef.current);
+        document.title = "⏱ Time's up! — DebateVault";
+        setTimeout(() => { document.title = "DebateVault"; }, 10000);
+      }
     }, 500);
     return () => clearInterval(timerRef.current);
   }, [timerRunning, timerEndTime]);
@@ -174,13 +220,6 @@ export default function App() {
   }
 
   function stopTimer() { setTimerRunning(false); setTimerRemaining(null); setTimerEndTime(null); }
-
-  function formatTime(secs) {
-    if (secs === null) return "--:--";
-    const m = Math.floor(secs / 60).toString().padStart(2, "0");
-    const s = (secs % 60).toString().padStart(2, "0");
-    return `${m}:${s}`;
-  }
 
   function timerProgress() {
     if (!timerRemaining) return 0;
