@@ -578,7 +578,7 @@ export default function App() {
   );
 
   return (
-    <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif",transition:"background .2s,color .2s"}}>
+    <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif",transition:"background .2s,color .2s",display:"flex"}}>
       <style>{STYLES}</style>
 
       {toast && (
@@ -587,35 +587,54 @@ export default function App() {
         </div>
       )}
 
+      {/* SIDEBAR */}
+      <div style={{width:"220px",minHeight:"100vh",background:dark?"#0a0a18":"#1a1a2e",borderRight:`1px solid ${dark?"#1e1e3a":"#2a2a4a"}`,display:"flex",flexDirection:"column",position:"fixed",top:0,left:0,zIndex:99,fontFamily:"'DM Sans',sans-serif"}}>
+        {/* Logo */}
+        <div onClick={() => { setView("browse"); clearSearch(); }} style={{padding:"24px 20px 20px",cursor:"pointer",borderBottom:`1px solid ${dark?"#1e1e3a":"#2a2a4a"}`}}>
+          <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"4px"}}>
+            <div style={{width:"32px",height:"32px",borderRadius:"10px",background:"linear-gradient(135deg,#7864ff,#b0a0ff)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px",flexShrink:0}}>⚖</div>
+            <span style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"17px",color:"#f0f0fa"}}>DebateVault</span>
+          </div>
+          <span style={{fontSize:"11px",color:"#6060aa",marginLeft:"42px"}}>{motions.length} motions</span>
+        </div>
+
+        {/* Nav items */}
+        <nav style={{padding:"12px 10px",flex:1,display:"flex",flexDirection:"column",gap:"4px"}}>
+          {[
+            ["browse", "🗂", "Browse"],
+            ["timer",  "⏱", "Prep Timer"],
+            ["news",   "📰", "News"],
+            ["admin",  "⚙", "Admin"],
+          ].map(([v, icon, label]) => {
+            const active = view === v || (view === "detail" && v === "browse");
+            return (
+              <button key={v} onClick={() => { setView(v); if (v==="browse") clearSearch(); }}
+                style={{display:"flex",alignItems:"center",gap:"12px",padding:"11px 14px",borderRadius:"10px",border:"none",background:active?"linear-gradient(135deg,rgba(120,100,255,.25),rgba(120,100,255,.12))":"transparent",color:active?"#c0b0ff":"#7070a0",fontSize:"14px",fontWeight:active?600:400,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all .15s",borderLeft:active?"3px solid #7864ff":"3px solid transparent"}}>
+                <span style={{fontSize:"17px",width:"22px",textAlign:"center"}}>{icon}</span>
+                {label}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Bottom: dark mode toggle */}
+        <div style={{padding:"16px 10px",borderTop:`1px solid ${dark?"#1e1e3a":"#2a2a4a"}`}}>
+          <button onClick={() => setDark(d => !d)}
+            style={{display:"flex",alignItems:"center",gap:"12px",padding:"11px 14px",borderRadius:"10px",border:"none",background:"transparent",color:"#7070a0",fontSize:"14px",cursor:"pointer",fontFamily:"inherit",width:"100%",textAlign:"left"}}>
+            <span style={{fontSize:"17px",width:"22px",textAlign:"center"}}>{dark ? "☀️" : "🌙"}</span>
+            {dark ? "Light Mode" : "Dark Mode"}
+          </button>
+        </div>
+      </div>
+
+      {/* MAIN CONTENT — offset by sidebar width */}
+      <div style={{marginLeft:"220px",flex:1,minWidth:0}}>
+
       {loadError && (
         <div style={{background:dark?"#2a1a00":"#fff8ee",borderBottom:`1px solid ${dark?"#7a520033":"#f0c060"}`,padding:"8px 24px",textAlign:"center",fontSize:"12px",color:dark?"#ffaa44":"#a07000"}}>
           Could not connect to database. Check your internet connection.
         </div>
       )}
-
-      {/* NAV */}
-      <nav style={{position:"sticky",top:0,zIndex:98,background:T.nav,backdropFilter:"blur(10px)",borderBottom:`1px solid ${T.border}`,padding:"0 28px",height:"58px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div onClick={() => { setView("browse"); clearSearch(); }} style={{display:"flex",alignItems:"center",gap:"9px",cursor:"pointer"}}>
-          <div style={{width:"30px",height:"30px",borderRadius:"8px",background:"linear-gradient(135deg,#7864ff,#b0a0ff)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"15px"}}>⚖</div>
-          <span style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"18px",color:T.text}}>DebateVault</span>
-        </div>
-        <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
-          <span style={{fontSize:"12px",color:T.textFaint,marginRight:"4px"}}>{motions.length} motions</span>
-
-          {/* Light/dark toggle */}
-          <button onClick={() => setDark(d => !d)}
-            style={{width:"36px",height:"36px",borderRadius:"8px",border:`1px solid ${T.border2}`,background:T.surface2,cursor:"pointer",fontSize:"16px",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .2s"}}>
-            {dark ? "☀️" : "🌙"}
-          </button>
-
-          {[["browse","Browse"],["timer","⏱ Timer"],["news","📰 News"],["admin","Admin ✦"]].map(([v,label]) => (
-            <button key={v} onClick={() => { setView(v); if (v==="browse") clearSearch(); }}
-              style={{padding:"7px 16px",borderRadius:"8px",border:`1px solid ${view===v||(view==="detail"&&v==="browse")?T.accent+"55":T.border2}`,background:view===v||(view==="detail"&&v==="browse")?"rgba(120,100,255,.15)":"transparent",color:view===v||(view==="detail"&&v==="browse")?T.accentText:T.textMuted,fontSize:"13px",fontWeight:500,cursor:"pointer"}}>
-              {label}
-            </button>
-          ))}
-        </div>
-      </nav>
 
       {/* BROWSE */}
       {view === "browse" && (
@@ -1048,6 +1067,7 @@ export default function App() {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }
