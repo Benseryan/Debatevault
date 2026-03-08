@@ -492,6 +492,12 @@ export default function App() {
               <select value={filterTheme} onChange={e => setFilterTheme(e.target.value)} style={{padding:"7px 13px",background:T.surface,border:`1px solid ${T.border2}`,borderRadius:"8px",color:T.text,fontSize:"13px",cursor:"pointer",fontFamily:"inherit"}}>
                 {THEMES.map(t => <option key={t}>{t}</option>)}
               </select>
+              {filterTheme !== "All Themes" && THEME_TREE[filterTheme] && (
+  <select value={filterSubtheme} onChange={e => setFilterSubtheme(e.target.value)} style={{padding:"7px 13px",background:T.surface,border:`1px solid ${T.accent}55`,borderRadius:"8px",color:T.accentText,fontSize:"13px",cursor:"pointer",fontFamily:"inherit"}}>
+    <option value="All">All {filterTheme}</option>
+    {THEME_TREE[filterTheme].map(s => <option key={s}>{s}</option>)}
+  </select>
+)}
               {DIFFICULTIES.map(d => (
                 <button key={d} onClick={() => setFilterDiff(d)} style={{padding:"7px 14px",borderRadius:"8px",border:`1px solid ${filterDiff===d?T.accent:T.border2}`,background:filterDiff===d?"rgba(120,100,255,.15)":"transparent",color:filterDiff===d?T.accentText:T.textMuted,fontSize:"13px",cursor:"pointer",fontWeight:500,fontFamily:"inherit"}}>{d}</button>
               ))}
