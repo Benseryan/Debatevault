@@ -120,6 +120,60 @@ const LIGHT = {
 
 const EMPTY_FORM = {motion:"",theme:"Economics",subtheme:"",keywords:"",tournament:"",difficulty:"Medium",propArgs:[{name:"",summary:"",type:"Practical"}],oppArgs:[{name:"",summary:"",type:"Practical"}]};
 
+// ── Animated cycling placeholder ─────────────────────────────────────────────
+const SEARCH_EXAMPLES = [
+  "social media and democracy",
+  "universal basic income",
+  "nuclear energy",
+  "drug legalisation",
+  "open borders",
+  "capital punishment",
+  "affirmative action",
+  "carbon tax",
+  "mandatory voting",
+  "wealth tax",
+];
+
+function AnimatedPlaceholder({ query }) {
+  const [idx, setIdx] = React.useState(0);
+  const [visible, setVisible] = React.useState(true);
+
+  React.useEffect(() => {
+    if (query) return; // stop when user is typing
+    const cycle = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => {
+        setIdx(i => (i + 1) % SEARCH_EXAMPLES.length);
+        setVisible(true);
+      }, 400);
+    }, 2800);
+    return () => clearInterval(cycle);
+  }, [query]);
+
+  if (query) return null;
+
+  return (
+    <span style={{
+      position:"absolute", left:"42px", top:"50%", transform:"translateY(-50%)",
+      pointerEvents:"none", fontSize:"14px", userSelect:"none",
+      display:"flex", alignItems:"center", gap:"4px",
+      color:"transparent",
+    }}>
+      <span style={{color:"#aaa"}}>Try&nbsp;</span>
+      <span style={{
+        color:"#888",
+        opacity: visible ? 1 : 0,
+        filter: visible ? "blur(0px)" : "blur(6px)",
+        transform: visible ? "translateY(0)" : "translateY(6px)",
+        transition: "opacity .35s ease, filter .35s ease, transform .35s ease",
+        display:"inline-block",
+      }}>
+        "{SEARCH_EXAMPLES[idx]}"
+      </span>
+    </span>
+  );
+}
+
 export default function App() {
   const [dark, setDark] = useState(() => {
     const saved = localStorage.getItem("debatevault-theme");
@@ -786,7 +840,7 @@ export default function App() {
         onMouseEnter={()=>setSidebarOpen(true)}
         onMouseLeave={()=>setSidebarOpen(false)}
         style={{
-          width: sidebarOpen ? "200px" : "52px",
+          width: sidebarOpen ? "210px" : "56px",
           minHeight:"100vh", background:T.surface,
           borderRight:`1px solid ${T.border}`,
           display:"flex", flexDirection:"column",
@@ -798,10 +852,10 @@ export default function App() {
         {/* Logo */}
         <div onClick={()=>{setView("browse");clearSearch();}}
           style={{padding:"16px 14px",cursor:"pointer",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:"10px",minHeight:"56px",flexShrink:0}}>
-          <div style={{width:"24px",height:"24px",borderRadius:"6px",background:dark?"#1a1a1a":"#111",border:`1px solid ${dark?"#333":"#222"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",flexShrink:0}}>⚖</div>
+          <div style={{width:"30px",height:"30px",borderRadius:"7px",background:dark?"#1a1a1a":"#111",border:`1px solid ${dark?"#333":"#222"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"15px",flexShrink:0}}>⚖</div>
           <div style={{overflow:"hidden",whiteSpace:"nowrap",opacity:sidebarOpen?1:0,transition:"opacity .2s",minWidth:0}}>
-            <div style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"14px",color:T.text,lineHeight:1.2}}>DebateVault</div>
-            <div style={{fontSize:"10px",color:T.textMuted,letterSpacing:".04em"}}>{motions.length} motions</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"17px",color:T.text,lineHeight:1.2}}>DebateVault</div>
+            <div style={{fontSize:"11px",color:T.textMuted,letterSpacing:".04em"}}>{motions.length} motions</div>
           </div>
         </div>
 
@@ -818,8 +872,8 @@ export default function App() {
             return (
               <button key={v} onClick={()=>{setView(v);if(v==="browse")clearSearch();}}
                 title={!sidebarOpen ? label : ""}
-                style={{display:"flex",alignItems:"center",gap:"10px",padding:"9px 10px",borderRadius:"7px",border:"none",background:active?(dark?"#1a1a1a":"#f0f0f0"):"transparent",color:active?T.text:T.textMuted,fontSize:"13px",fontWeight:active?600:400,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all .15s",width:"100%",whiteSpace:"nowrap"}}>
-                <span style={{fontSize:"16px",width:"20px",textAlign:"center",flexShrink:0,lineHeight:1}}>{icon}</span>
+                style={{display:"flex",alignItems:"center",gap:"12px",padding:"11px 12px",borderRadius:"8px",border:"none",background:active?(dark?"#1a1a1a":"#f0f0f0"):"transparent",color:active?T.text:T.textMuted,fontSize:"14px",fontWeight:active?600:400,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all .15s",width:"100%",whiteSpace:"nowrap"}}>
+                <span style={{fontSize:"17px",width:"22px",textAlign:"center",flexShrink:0,lineHeight:1}}>{icon}</span>
                 <span style={{opacity:sidebarOpen?1:0,transition:"opacity .15s",overflow:"hidden"}}>{label}</span>
               </button>
             );
@@ -830,21 +884,21 @@ export default function App() {
         <div style={{padding:"8px 8px",borderTop:`1px solid ${T.border}`,display:"flex",flexDirection:"column",gap:"2px",flexShrink:0}}>
           <button onClick={()=>{sessionStorage.removeItem("dv-entered");setShowLanding(true);}}
             title={!sidebarOpen?"Home":""}
-            style={{display:"flex",alignItems:"center",gap:"10px",padding:"9px 10px",borderRadius:"7px",border:"none",background:"transparent",color:T.textMuted,fontSize:"13px",cursor:"pointer",fontFamily:"inherit",textAlign:"left",width:"100%",whiteSpace:"nowrap"}}>
-            <span style={{fontSize:"16px",width:"20px",textAlign:"center",flexShrink:0}}>←</span>
+            style={{display:"flex",alignItems:"center",gap:"12px",padding:"10px 12px",borderRadius:"8px",border:"none",background:"transparent",color:T.textMuted,fontSize:"14px",cursor:"pointer",fontFamily:"inherit",textAlign:"left",width:"100%",whiteSpace:"nowrap"}}>
+            <span style={{fontSize:"17px",width:"22px",textAlign:"center",flexShrink:0}}>←</span>
             <span style={{opacity:sidebarOpen?1:0,transition:"opacity .15s"}}>Home</span>
           </button>
           <button onClick={()=>setDark(d=>!d)}
             title={!sidebarOpen?(dark?"Light mode":"Dark mode"):""}
-            style={{display:"flex",alignItems:"center",gap:"10px",padding:"9px 10px",borderRadius:"7px",border:"none",background:"transparent",color:T.textMuted,fontSize:"13px",cursor:"pointer",fontFamily:"inherit",textAlign:"left",width:"100%",whiteSpace:"nowrap"}}>
-            <span style={{fontSize:"16px",width:"20px",textAlign:"center",flexShrink:0}}>{dark?"☀️":"🌙"}</span>
+            style={{display:"flex",alignItems:"center",gap:"12px",padding:"10px 12px",borderRadius:"8px",border:"none",background:"transparent",color:T.textMuted,fontSize:"14px",cursor:"pointer",fontFamily:"inherit",textAlign:"left",width:"100%",whiteSpace:"nowrap"}}>
+            <span style={{fontSize:"17px",width:"22px",textAlign:"center",flexShrink:0}}>{dark?"☀️":"🌙"}</span>
             <span style={{opacity:sidebarOpen?1:0,transition:"opacity .15s"}}>{dark?"Light":"Dark"}</span>
           </button>
         </div>
       </div>
 
       {/* MAIN CONTENT */}
-      <div className="main-content" style={{marginLeft:"52px",flex:1,minWidth:0,transition:"margin-left .25s cubic-bezier(.4,0,.2,1)"}}>
+      <div className="main-content" style={{marginLeft:"56px",flex:1,minWidth:0,transition:"margin-left .25s cubic-bezier(.4,0,.2,1)"}}>
 
       {/* MOBILE TOP BAR */}
       {mobile && (
@@ -895,15 +949,17 @@ export default function App() {
               Every argument.<br/><span style={{fontStyle:"italic",color:T.textMuted}}>Every motion.</span>
             </h1>
             <p style={{color:T.textMuted,fontSize:"15px",marginBottom:"28px",lineHeight:1.7}}>Search any topic and find ready-to-use Proposition and Opposition arguments.</p>
-            <div style={{display:"flex",gap:"8px",maxWidth:"540px",margin:"0 auto"}}>
+            <div style={{display:"flex",gap:"10px",maxWidth:"580px",margin:"0 auto"}}>
               <div style={{flex:1,position:"relative"}}>
-                <span style={{position:"absolute",left:"13px",top:"50%",transform:"translateY(-50%)",color:T.textMuted,fontSize:"16px",pointerEvents:"none"}}>⌕</span>
+                <span style={{position:"absolute",left:"14px",top:"50%",transform:"translateY(-50%)",color:T.textMuted,fontSize:"17px",pointerEvents:"none",zIndex:1}}>⌕</span>
+                <AnimatedPlaceholder query={query} />
                 <input value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key==="Enter" && doSearch()}
-                  placeholder='Try "social media", "drugs", "climate"...'
-                  style={{width:"100%",padding:"12px 36px 12px 38px",background:T.surface,border:`1px solid ${T.border}`,borderRadius:"8px",color:T.text,fontSize:"14px",fontFamily:"inherit",transition:"border-color .2s"}} />
-                {query && <button onClick={clearSearch} style={{position:"absolute",right:"10px",top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:"20px",lineHeight:1,padding:"0 4px"}}>×</button>}
+                  placeholder=""
+                  style={{width:"100%",padding:"14px 40px 14px 42px",background:T.surface,border:`1px solid ${T.border}`,borderRadius:"9px",color:T.text,fontSize:"15px",fontFamily:"inherit",transition:"border-color .2s",position:"relative",zIndex:2,background:"transparent"}} />
+                {query && <button onClick={clearSearch} style={{position:"absolute",right:"12px",top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:"22px",lineHeight:1,padding:"0 4px",zIndex:3}}>×</button>}
+                <div style={{position:"absolute",inset:0,background:T.surface,borderRadius:"9px",border:`1px solid ${T.border}`,zIndex:0,pointerEvents:"none"}} />
               </div>
-              <button onClick={doSearch} style={{padding:"12px 20px",borderRadius:"8px",border:"none",background:dark?"#fff":"#111",color:dark?"#111":"#fff",fontSize:"13px",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",transition:"opacity .2s"}}>Search</button>
+              <button onClick={doSearch} style={{padding:"14px 24px",borderRadius:"9px",border:"none",background:dark?"#fff":"#111",color:dark?"#111":"#fff",fontSize:"14px",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",transition:"opacity .2s"}}>Search</button>
             </div>
           </div>
 
