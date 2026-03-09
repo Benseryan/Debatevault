@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import LandingPage from "./LandingPage";
 
 const SUPABASE_URL = "https://rajnjpvmllximwhrdhea.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJham5qcHZtbGx4aW13aHJkaGVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2NTQxNTgsImV4cCI6MjA4ODIzMDE1OH0.Z8tVtTrNPoHF0eGPzoBQb_rdXvZ-8E_mvlJBCVTN1XU";
@@ -84,22 +85,24 @@ function runSearch(query, motions) {
 const TC = {"Environment":"#2d6a4f","Technology":"#1a4a7a","International Relations":"#5a3e8a","Criminal Justice":"#7a3e3e","Economics":"#7a6200","Human Rights":"#1a6a6a","Gender & Identity":"#6a2d6a","Health":"#2d5a7a"};
 const DC = {"Easy":"#2d6a4f","Medium":"#7a6200","Hard":"#7a3e3e"};
 
-// Dark and light theme tokens
+// V2 — editorial, clean, black/white/grey
 const DARK = {
-  bg: "#0d0d1a", surface: "#111125", surface2: "#13132a", surface3: "#0d0d1e",
-  border: "#1e1e3a", border2: "#2a2a4a", border3: "#2a2a5a",
-  text: "#e0e0f0", textSub: "#8080aa", textMuted: "#555", textFaint: "#444",
-  nav: "rgba(13,13,26,.96)", accent: "#7864ff", accentText: "#a89aff",
-  propBorder: "#1e3a2a", oppBorder: "#3a1e1e",
-  scrollThumb: "#2a2a4a", placeholder: "#444",
+  bg: "#0a0a0a", surface: "#111111", surface2: "#161616", surface3: "#1a1a1a",
+  border: "#222222", border2: "#2a2a2a", border3: "#333333",
+  text: "#f0f0f0", textSub: "#aaaaaa", textMuted: "#666666", textFaint: "#444444",
+  nav: "rgba(10,10,10,0.92)", accent: "#0284c7", accentText: "#38bdf8",
+  prop: "#16a34a", opp: "#dc2626", propBg: "rgba(22,163,74,.08)", oppBg: "rgba(220,38,38,.08)",
+  propBorder: "rgba(22,163,74,.2)", oppBorder: "rgba(220,38,38,.2)",
+  scrollThumb: "#333", placeholder: "#555",
 };
 const LIGHT = {
-  bg: "#f5f5f0", surface: "#ffffff", surface2: "#f0f0eb", surface3: "#e8e8e2",
-  border: "#ddddd5", border2: "#ccccC4", border3: "#bbbbB4",
-  text: "#1a1a2e", textSub: "#4a4a6a", textMuted: "#888", textFaint: "#aaa",
-  nav: "rgba(245,245,240,.96)", accent: "#6050ee", accentText: "#6050ee",
-  propBorder: "#c0ddc8", oppBorder: "#ddc0c0",
-  scrollThumb: "#ccccC4", placeholder: "#bbb",
+  bg: "#fafafa", surface: "#ffffff", surface2: "#f5f5f5", surface3: "#efefef",
+  border: "#e8e8e8", border2: "#dddddd", border3: "#cccccc",
+  text: "#111111", textSub: "#555555", textMuted: "#999999", textFaint: "#bbbbbb",
+  nav: "rgba(250,250,250,0.92)", accent: "#0284c7", accentText: "#0284c7",
+  prop: "#16a34a", opp: "#dc2626", propBg: "rgba(22,163,74,.06)", oppBg: "rgba(220,38,38,.06)",
+  propBorder: "rgba(22,163,74,.2)", oppBorder: "rgba(220,38,38,.2)",
+  scrollThumb: "#ddd", placeholder: "#bbb",
 };
 
 const EMPTY_FORM = {motion:"",theme:"Economics",subtheme:"",keywords:"",tournament:"",difficulty:"Medium",propArgs:[{name:"",summary:"",type:"Practical"}],oppArgs:[{name:"",summary:"",type:"Practical"}]};
@@ -109,6 +112,7 @@ export default function App() {
     const saved = localStorage.getItem("debatevault-theme");
     return saved !== null ? saved === "dark" : true;
   });
+  const [showLanding, setShowLanding] = useState(() => !sessionStorage.getItem("dv-entered"));
   const [intro, setIntro] = useState(true);
   const [introPhase, setIntroPhase] = useState(0); // 0=logo, 1=tagline, 2=zoom out, 3=done
   const T = dark ? DARK : LIGHT;
@@ -161,7 +165,7 @@ export default function App() {
 
   // Logic chain state
   const BLOCK_TYPES = [
-    { type: "Claim",     color: "#7864ff", bg: "rgba(120,100,255,.15)", desc: "The 'What' — your core assertion" },
+    { type: "Claim",     color: "#0284c7", bg: "rgba(2,132,199,.12)",   desc: "The 'What' — your core assertion" },
     { type: "Mechanism", color: "#40c090", bg: "rgba(64,192,144,.15)",  desc: "The 'How' — why this happens" },
     { type: "Link",      color: "#ffaa44", bg: "rgba(255,170,68,.15)",  desc: "The 'Logic' — connecting step" },
     { type: "Impact",    color: "#ff7070", bg: "rgba(255,112,112,.15)", desc: "The 'Why it matters' — real world consequence" },
@@ -263,7 +267,7 @@ export default function App() {
     return (timerRemaining / duration) * 100;
   }
 
-  const INP = {width:"100%",padding:"10px 14px",background:T.surface2,border:`1px solid ${T.border2}`,borderRadius:"8px",color:T.text,fontSize:"14px",fontFamily:"inherit"};
+  const INP = {width:"100%",padding:"10px 14px",background:T.surface2,border:`1px solid ${T.border2}`,borderRadius:"7px",color:T.text,fontSize:"14px",fontFamily:"inherit",transition:"border-color .2s"};
 
   // Keep body background in sync with theme
   useEffect(() => {
@@ -281,36 +285,27 @@ export default function App() {
   }, []);
 
   const STYLES = `
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap');
     *{box-sizing:border-box;margin:0;padding:0;}
-    ::-webkit-scrollbar{width:5px;}
-    ::-webkit-scrollbar-thumb{background:#2a2a4a;border-radius:3px;}
-    .card{transition:transform .18s,box-shadow .18s;cursor:pointer;}
-    .card:hover{transform:translateY(-3px);box-shadow:0 14px 40px rgba(100,80,255,.15)!important;}
-    .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+    ::-webkit-scrollbar{width:4px;}
+    ::-webkit-scrollbar-thumb{background:${dark?"#333":"#ddd"};border-radius:2px;}
+    .card{transition:border-color .2s,box-shadow .2s,transform .2s;cursor:pointer;}
+    .card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1)!important;}
     input,select,textarea{font-family:inherit;}
-    input:focus,select:focus,textarea:focus{outline:none;border-color:#7864ff!important;box-shadow:0 0 0 3px #7864ff22;}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:#0284c7!important;box-shadow:0 0 0 3px rgba(2,132,199,.12);}
     ::placeholder{color:#888;}
     @media(max-width:768px){
       .sidebar{display:none!important;}
-      .main-content{margin-left:0!important;padding-bottom:80px;}
+      .main-content{margin-left:0!important;padding-bottom:72px;}
     }
     @media(min-width:769px){
       .bottom-tab-bar{display:none!important;}
     }
-    @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-    @keyframes scaleIn{from{opacity:0;transform:scale(1.08)}to{opacity:1;transform:scale(1)}}
-    @keyframes slideLeft{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:translateX(0)}}
-    @keyframes bloomBg{from{opacity:0}to{opacity:1}}
-    @keyframes zoomOut{from{transform:scale(1.15);opacity:0}to{transform:scale(1);opacity:1}}
-    @keyframes letterIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes lineDraw{from{width:0}to{width:100%}}
-    @keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
-    .intro-char{display:inline-block;animation:letterIn .4s cubic-bezier(.22,1,.36,1) both;}
-    .card-stagger{animation:fadeUp .5s cubic-bezier(.22,1,.36,1) both;}
-    .sidebar-animate{animation:slideLeft .6s cubic-bezier(.22,1,.36,1) both;}
-    .page-enter{animation:scaleIn .4s cubic-bezier(.22,1,.36,1) both;}
+    @keyframes lineDraw{from{width:0}to{width:60%}}
+    @keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+    .page-enter{animation:fadeUp .35s cubic-bezier(.22,1,.36,1) both;}
   `;
 
   useEffect(() => {
@@ -668,201 +663,161 @@ export default function App() {
     </div>
   );
 
-  // INTRO SCREEN
+  // LANDING PAGE
+  if (showLanding) return (
+    <LandingPage
+      dark={dark}
+      setDark={setDark}
+      onEnter={() => { sessionStorage.setItem("dv-entered","1"); setShowLanding(false); }}
+    />
+  );
+
+  // INTRO SCREEN — v2 clean
   if (intro) return (
     <div style={{
       position:"fixed",inset:0,
-      background:"#050510",
+      background:dark?"#0a0a0a":"#fafafa",
       display:"flex",flexDirection:"column",
       alignItems:"center",justifyContent:"center",
       zIndex:9999,
       fontFamily:"'DM Sans',sans-serif",
-      overflow:"hidden",
     }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap');
-        @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-        @keyframes lineDraw{from{width:0}to{width:60%}}
-        @keyframes bloomBg{from{transform:scale(0.6);opacity:0}to{transform:scale(1);opacity:1}}
-        @keyframes letterIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes pulse{0%,100%{opacity:.4}50%{opacity:.9}}
-        @keyframes zoomFade{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.08)}}
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,900;1,700&display=swap');
+        @keyframes dvUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes dvIn{from{opacity:0}to{opacity:1}}
+        @keyframes dvLine{from{width:0}to{width:100%}}
+        @keyframes dvPulse{0%,100%{opacity:.3}50%{opacity:1}}
+        @keyframes dvExit{to{opacity:0}}
       `}</style>
 
-      {/* Ambient background glow */}
       <div style={{
-        position:"absolute",inset:0,
-        background:"radial-gradient(ellipse 80% 60% at 50% 50%, rgba(120,100,255,.12) 0%, transparent 70%)",
-        animation:"bloomBg 1.2s cubic-bezier(.22,1,.36,1) both",
-        animationDelay:".2s",
-        opacity:0,
-      }} />
-
-      {/* Subtle grid lines */}
-      <div style={{
-        position:"absolute",inset:0,
-        backgroundImage:"linear-gradient(rgba(120,100,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(120,100,255,.04) 1px,transparent 1px)",
-        backgroundSize:"60px 60px",
-        animation:"fadeIn 1s ease both",
-        animationDelay:".3s",
-        opacity:0,
-      }} />
-
-      {/* Logo mark */}
-      <div style={{
-        width:"64px",height:"64px",
-        borderRadius:"18px",
-        background:"linear-gradient(135deg,#7864ff,#b0a0ff)",
+        width:"36px",height:"36px",borderRadius:"9px",
+        background:dark?"#1a1a1a":"#111",
+        border:`1px solid ${dark?"#333":"#222"}`,
         display:"flex",alignItems:"center",justifyContent:"center",
-        fontSize:"28px",
-        marginBottom:"28px",
-        boxShadow:"0 0 60px rgba(120,100,255,.4)",
-        animation:"fadeUp .7s cubic-bezier(.22,1,.36,1) both",
-        animationDelay:".1s",
-        opacity:0,
+        fontSize:"18px",marginBottom:"22px",
+        animation:"dvUp .6s cubic-bezier(.22,1,.36,1) both",
+        animationDelay:".1s",opacity:0,
       }}>⚖</div>
 
-      {/* Main title — letters animate in */}
       <div style={{
         fontFamily:"'Playfair Display',serif",
-        fontSize:"clamp(36px,8vw,72px)",
+        fontSize:"clamp(32px,7vw,60px)",
         fontWeight:900,
-        color:"#f0f0fa",
-        letterSpacing:"-1px",
-        lineHeight:1.1,
+        color:dark?"#f0f0f0":"#111",
+        letterSpacing:"-2px",
+        lineHeight:1,
         textAlign:"center",
-        marginBottom:"16px",
-        animation:"fadeUp .8s cubic-bezier(.22,1,.36,1) both",
-        animationDelay:".2s",
-        opacity:0,
-      }}>
-        DebateVault
-      </div>
+        marginBottom:"12px",
+        animation:"dvUp .7s cubic-bezier(.22,1,.36,1) both",
+        animationDelay:".2s",opacity:0,
+      }}>DebateVault</div>
 
-      {/* Animated underline */}
       {introPhase >= 2 && (
         <div style={{
-          height:"2px",
-          background:"linear-gradient(90deg,transparent,#7864ff,#b0a0ff,transparent)",
-          borderRadius:"2px",
-          marginBottom:"24px",
-          width:"60%",
-          animation:"lineDraw .8s cubic-bezier(.22,1,.36,1) both",
+          height:"1px",background:dark?"#333":"#ddd",
+          width:"120px",marginBottom:"12px",
+          animation:"dvLine .5s ease both",
         }} />
       )}
 
-      {/* Tagline */}
       {introPhase >= 1 && (
         <div style={{
-          fontSize:"clamp(14px,2vw,18px)",
-          color:"#7070a0",
-          letterSpacing:".15em",
-          textTransform:"uppercase",
-          fontWeight:500,
-          textAlign:"center",
-          animation:"fadeUp .7s cubic-bezier(.22,1,.36,1) both",
+          fontSize:"12px",color:dark?"#555":"#aaa",
+          letterSpacing:".12em",textTransform:"uppercase",
+          fontWeight:500,textAlign:"center",
+          animation:"dvUp .5s cubic-bezier(.22,1,.36,1) both",
           opacity:0,
-        }}>
-          Every argument. Every motion.
-        </div>
+        }}>Every argument. Every motion.</div>
       )}
 
-      {/* Loading dots */}
       {introPhase >= 2 && (
-        <div style={{display:"flex",gap:"6px",marginTop:"48px"}}>
+        <div style={{display:"flex",gap:"5px",marginTop:"40px"}}>
           {[0,1,2].map(i => (
             <div key={i} style={{
-              width:"6px",height:"6px",borderRadius:"50%",
-              background:"#7864ff",
-              animation:"pulse 1.2s ease infinite",
+              width:"4px",height:"4px",borderRadius:"50%",
+              background:dark?"#444":"#ccc",
+              animation:"dvPulse 1.2s ease infinite",
               animationDelay:`${i*0.2}s`,
             }} />
           ))}
         </div>
       )}
 
-      {/* Zoom out overlay for exit */}
       {introPhase >= 3 && (
         <div style={{
           position:"absolute",inset:0,
-          background:"#050510",
-          animation:"fadeIn .6s ease both",
-          animationFillMode:"forwards",
+          background:dark?"#0a0a0a":"#fafafa",
+          animation:"dvIn .5s ease both",
         }} />
       )}
     </div>
   );
 
   return (
-    <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif",transition:"background .2s,color .2s",display:"flex",animation:"fadeIn .5s ease both"}}>
+    <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif",transition:"background .2s,color .2s",display:"flex"}}>
       <style>{STYLES}</style>
 
       {toast && (
-        <div style={{position:"fixed",bottom:"24px",left:"50%",transform:"translateX(-50%)",background:toast.isError?(dark?"#3a1e1e":"#fff0f0"):(dark?"#1e3a2a":"#f0fff4"),border:`1px solid ${toast.isError?"#ff707066":"#40c09066"}`,borderRadius:"10px",padding:"12px 24px",fontSize:"14px",color:toast.isError?"#ff7070":"#2a8a5a",zIndex:999,boxShadow:"0 8px 32px rgba(0,0,0,.15)",whiteSpace:"nowrap"}}>
+        <div style={{position:"fixed",bottom:"24px",left:"50%",transform:"translateX(-50%)",background:T.surface,border:`1px solid ${toast.isError?"#dc262655":T.border}`,borderRadius:"8px",padding:"11px 22px",fontSize:"13px",color:toast.isError?"#dc2626":T.text,zIndex:999,boxShadow:"0 4px 24px rgba(0,0,0,.15)",whiteSpace:"nowrap",fontWeight:500}}>
           {toast.msg}
         </div>
       )}
 
-      {/* SIDEBAR */}
-      <div className="sidebar" style={{width:"220px",minHeight:"100vh",background:dark?"#0a0a18":"#1a1a2e",borderRight:`1px solid ${dark?"#1e1e3a":"#2a2a4a"}`,display:"flex",flexDirection:"column",position:"fixed",top:0,left:0,zIndex:99,fontFamily:"'DM Sans',sans-serif"}}>
-        {/* Logo */}
-        <div onClick={() => { setView("browse"); clearSearch(); }} style={{padding:"24px 20px 20px",cursor:"pointer",borderBottom:`1px solid ${dark?"#1e1e3a":"#2a2a4a"}`}}>
-          <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"4px"}}>
-            <div style={{width:"32px",height:"32px",borderRadius:"10px",background:"linear-gradient(135deg,#7864ff,#b0a0ff)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px",flexShrink:0}}>⚖</div>
-            <span style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"17px",color:"#f0f0fa"}}>DebateVault</span>
+      {/* SIDEBAR v2 */}
+      <div className="sidebar" style={{width:"200px",minHeight:"100vh",background:T.surface,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",position:"fixed",top:0,left:0,zIndex:99,fontFamily:"'DM Sans',sans-serif"}}>
+        <div onClick={() => { setView("browse"); clearSearch(); }} style={{padding:"20px 18px 16px",cursor:"pointer",borderBottom:`1px solid ${T.border}`}}>
+          <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"3px"}}>
+            <div style={{width:"26px",height:"26px",borderRadius:"6px",background:dark?"#1a1a1a":"#111",border:`1px solid ${dark?"#333":"#222"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px",flexShrink:0}}>⚖</div>
+            <span style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"15px",color:T.text}}>DebateVault</span>
           </div>
-          <span style={{fontSize:"11px",color:"#6060aa",marginLeft:"42px"}}>{motions.length} motions</span>
+          <span style={{fontSize:"10px",color:T.textMuted,marginLeft:"34px",letterSpacing:".05em"}}>{motions.length} motions</span>
         </div>
-
-        {/* Nav items */}
-        <nav style={{padding:"12px 10px",flex:1,display:"flex",flexDirection:"column",gap:"4px"}}>
+        <nav style={{padding:"10px 10px",flex:1,display:"flex",flexDirection:"column",gap:"2px"}}>
           {[
-            ["browse", "🗂", "Browse"],
-            ["timer",  "⏱", "Prep Timer"],
-            ["news",   "📰", "News"],
-            ["chain",  "🔗", "Logic Chain"],
-            ["admin",  "⚙", "Admin"],
-          ].map(([v, icon, label]) => {
-            const active = view === v || (view === "detail" && v === "browse");
+            ["browse","🗂","Browse"],
+            ["timer","⏱","Prep Timer"],
+            ["news","📰","News"],
+            ["chain","🔗","Logic Chain"],
+            ["admin","⚙","Admin"],
+          ].map(([v,icon,label]) => {
+            const active = view===v||(view==="detail"&&v==="browse");
             return (
-              <button key={v} onClick={() => { setView(v); if (v==="browse") clearSearch(); }}
-                style={{display:"flex",alignItems:"center",gap:"12px",padding:"11px 14px",borderRadius:"10px",border:"none",background:active?"linear-gradient(135deg,rgba(120,100,255,.25),rgba(120,100,255,.12))":"transparent",color:active?"#c0b0ff":"#7070a0",fontSize:"14px",fontWeight:active?600:400,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all .15s",borderLeft:active?"3px solid #7864ff":"3px solid transparent"}}>
-                <span style={{fontSize:"17px",width:"22px",textAlign:"center"}}>{icon}</span>
+              <button key={v} onClick={()=>{setView(v);if(v==="browse")clearSearch();}}
+                style={{display:"flex",alignItems:"center",gap:"10px",padding:"9px 12px",borderRadius:"7px",border:"none",background:active?(dark?"#1a1a1a":"#f0f0f0"):"transparent",color:active?T.text:T.textMuted,fontSize:"13px",fontWeight:active?600:400,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all .15s",width:"100%"}}>
+                <span style={{fontSize:"15px",width:"18px",textAlign:"center",flexShrink:0}}>{icon}</span>
                 {label}
               </button>
             );
           })}
         </nav>
-
-        {/* Bottom: dark mode toggle */}
-        <div style={{padding:"16px 10px",borderTop:`1px solid ${dark?"#1e1e3a":"#2a2a4a"}`}}>
-          <button onClick={() => setDark(d => !d)}
-            style={{display:"flex",alignItems:"center",gap:"12px",padding:"11px 14px",borderRadius:"10px",border:"none",background:"transparent",color:"#7070a0",fontSize:"14px",cursor:"pointer",fontFamily:"inherit",width:"100%",textAlign:"left"}}>
-            <span style={{fontSize:"17px",width:"22px",textAlign:"center"}}>{dark ? "☀️" : "🌙"}</span>
-            {dark ? "Light Mode" : "Dark Mode"}
-          </button>
+        <div style={{padding:"12px 10px",borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:"8px",justifyContent:"space-between"}}>
+          <span style={{fontSize:"11px",color:T.textMuted,paddingLeft:"4px"}}>{dark?"Dark":"Light"}</span>
+          <div onClick={()=>setDark(d=>!d)} style={{display:"flex",width:"44px",height:"24px",padding:"2px",borderRadius:"100px",cursor:"pointer",background:dark?"#1a1a1a":"#efefef",border:`1px solid ${T.border}`,alignItems:"center",transition:"all .3s",flexShrink:0}}>
+            <div style={{width:"18px",height:"18px",borderRadius:"50%",background:dark?"#444":"#ddd",transform:dark?"translateX(0)":"translateX(20px)",transition:"transform .3s cubic-bezier(.34,1.56,.64,1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"10px"}}>{dark?"🌙":"☀️"}</div>
+          </div>
         </div>
       </div>
 
-      {/* MAIN CONTENT — offset by sidebar width */}
-      <div className="main-content" style={{marginLeft:"220px",flex:1,minWidth:0}}>
+      {/* MAIN CONTENT */}
+      <div className="main-content" style={{marginLeft:"200px",flex:1,minWidth:0}}>
 
       {/* MOBILE TOP BAR */}
       {mobile && (
-        <div style={{position:"fixed",top:0,left:0,right:0,zIndex:99,background:dark?"#0a0a18":"#1a1a2e",borderBottom:"1px solid #1e1e3a",height:"52px",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px",fontFamily:"'DM Sans',sans-serif"}}>
+        <div style={{position:"fixed",top:0,left:0,right:0,zIndex:99,background:T.surface,borderBottom:`1px solid ${T.border}`,height:"48px",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px",fontFamily:"'DM Sans',sans-serif"}}>
           <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-            <div style={{width:"28px",height:"28px",borderRadius:"8px",background:"linear-gradient(135deg,#7864ff,#b0a0ff)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px"}}>⚖</div>
-            <span style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"16px",color:"#f0f0fa"}}>DebateVault</span>
+            <div style={{width:"26px",height:"26px",borderRadius:"6px",background:dark?"#1a1a1a":"#111",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px"}}>⚖</div>
+            <span style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"15px",color:T.text}}>DebateVault</span>
           </div>
-          <button onClick={() => setDark(d => !d)} style={{background:"none",border:"none",fontSize:"18px",cursor:"pointer",color:"#7070a0"}}>
+          <button onClick={() => setDark(d => !d)} style={{background:"none",border:"none",fontSize:"16px",cursor:"pointer",color:T.textMuted}}>
             {dark ? "☀️" : "🌙"}
           </button>
         </div>
       )}
 
       {/* MOBILE BOTTOM TAB BAR */}
-      <div className="bottom-tab-bar" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:99,background:dark?"#0a0a18":"#1a1a2e",borderTop:"1px solid #1e1e3a",height:"64px",display:"flex",alignItems:"center",justifyContent:"space-around",fontFamily:"'DM Sans',sans-serif"}}>
+      <div className="bottom-tab-bar" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:99,background:T.surface,borderTop:`1px solid ${T.border}`,height:"60px",display:"flex",alignItems:"center",justifyContent:"space-around",fontFamily:"'DM Sans',sans-serif"}}>
         {[
           ["browse","🗂","Browse"],
           ["timer","⏱","Timer"],
@@ -873,10 +828,10 @@ export default function App() {
           const active = view === v || (view === "detail" && v === "browse");
           return (
             <button key={v} onClick={() => { setView(v); if (v==="browse") clearSearch(); }}
-              style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"3px",background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",padding:"8px 12px",borderRadius:"10px",transition:"all .15s",flex:1}}>
-              <span style={{fontSize:"20px",lineHeight:1}}>{icon}</span>
-              <span style={{fontSize:"10px",fontWeight:active?700:400,color:active?"#c0b0ff":"#7070a0"}}>{label}</span>
-              {active && <div style={{width:"20px",height:"2px",borderRadius:"2px",background:"#7864ff",marginTop:"1px"}} />}
+              style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"2px",background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",padding:"8px 10px",borderRadius:"8px",transition:"all .15s",flex:1}}>
+              <span style={{fontSize:"18px",lineHeight:1}}>{icon}</span>
+              <span style={{fontSize:"10px",fontWeight:active?700:400,color:active?T.text:T.textMuted}}>{label}</span>
+              {active && <div style={{width:"16px",height:"2px",borderRadius:"2px",background:T.accent,marginTop:"1px"}} />}
             </button>
           );
         })}
@@ -891,72 +846,70 @@ export default function App() {
       {/* BROWSE */}
       {view === "browse" && (
         <div>
-          <div style={{maxWidth:"720px",margin:"0 auto",padding:mobile?"80px 16px 28px":"52px 24px 36px",textAlign:"center"}}>
-            <div style={{display:"inline-flex",alignItems:"center",padding:"4px 14px",borderRadius:"20px",background:"rgba(120,100,255,.1)",border:"1px solid rgba(120,100,255,.2)",marginBottom:"20px"}}>
-              <span style={{fontSize:"11px",color:T.accentText,fontWeight:600,textTransform:"uppercase",letterSpacing:".07em"}}>WSDC Argument Database</span>
-            </div>
-            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,6vw,52px)",fontWeight:900,lineHeight:1.15,marginBottom:"12px",color:dark?"#f0f0fa":"#1a1a2e"}}>
-              Every argument.<br/>Every motion.
+          <div style={{maxWidth:"680px",margin:"0 auto",padding:mobile?"72px 16px 24px":"48px 24px 32px",textAlign:"center"}}>
+            <p style={{fontSize:"11px",fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.textMuted,marginBottom:"14px"}}>WSDC Argument Database</p>
+            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,5vw,48px)",fontWeight:900,lineHeight:1.1,marginBottom:"10px",color:T.text,letterSpacing:"-1px"}}>
+              Every argument.<br/><span style={{fontStyle:"italic",color:T.textMuted}}>Every motion.</span>
             </h1>
-            <p style={{color:T.textMuted,fontSize:"16px",marginBottom:"30px",lineHeight:1.6}}>Search any topic and find ready-to-use Proposition and Opposition arguments.</p>
-            <div style={{display:"flex",gap:"10px",maxWidth:"580px",margin:"0 auto"}}>
+            <p style={{color:T.textMuted,fontSize:"15px",marginBottom:"28px",lineHeight:1.7}}>Search any topic and find ready-to-use Proposition and Opposition arguments.</p>
+            <div style={{display:"flex",gap:"8px",maxWidth:"540px",margin:"0 auto"}}>
               <div style={{flex:1,position:"relative"}}>
-                <span style={{position:"absolute",left:"14px",top:"50%",transform:"translateY(-50%)",color:T.textFaint,fontSize:"17px",pointerEvents:"none"}}>⌕</span>
+                <span style={{position:"absolute",left:"13px",top:"50%",transform:"translateY(-50%)",color:T.textMuted,fontSize:"16px",pointerEvents:"none"}}>⌕</span>
                 <input value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key==="Enter" && doSearch()}
-                  placeholder='Try "tesla cars", "social media", "drugs"...'
-                  style={{width:"100%",padding:"13px 40px 13px 42px",background:T.surface,border:`1px solid ${T.border2}`,borderRadius:"12px",color:T.text,fontSize:"15px",fontFamily:"inherit",transition:"border-color .2s"}} />
-                {query && <button onClick={clearSearch} style={{position:"absolute",right:"10px",top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:"22px",lineHeight:1,padding:"0 4px"}}>×</button>}
+                  placeholder='Try "social media", "drugs", "climate"...'
+                  style={{width:"100%",padding:"12px 36px 12px 38px",background:T.surface,border:`1px solid ${T.border}`,borderRadius:"8px",color:T.text,fontSize:"14px",fontFamily:"inherit",transition:"border-color .2s"}} />
+                {query && <button onClick={clearSearch} style={{position:"absolute",right:"10px",top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:"20px",lineHeight:1,padding:"0 4px"}}>×</button>}
               </div>
-              <button onClick={doSearch} style={{padding:"13px 22px",borderRadius:"12px",border:"none",background:"linear-gradient(135deg,#7864ff,#b0a0ff)",color:"#fff",fontSize:"14px",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit"}}>Search</button>
+              <button onClick={doSearch} style={{padding:"12px 20px",borderRadius:"8px",border:"none",background:dark?"#fff":"#111",color:dark?"#111":"#fff",fontSize:"13px",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",transition:"opacity .2s"}}>Search</button>
             </div>
           </div>
 
           {!searched && (
-            <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 18px",display:"flex",gap:"10px",flexWrap:"wrap",alignItems:"center"}}>
-              <select value={filterTheme} onChange={e => { setFilterTheme(e.target.value); setFilterSubtheme("All"); }} style={{padding:"7px 13px",background:T.surface,border:`1px solid ${T.border2}`,borderRadius:"8px",color:T.text,fontSize:"13px",cursor:"pointer",fontFamily:"inherit"}}>
+            <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 16px",display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center"}}>
+              <select value={filterTheme} onChange={e => { setFilterTheme(e.target.value); setFilterSubtheme("All"); }} style={{padding:"6px 12px",background:T.surface,border:`1px solid ${T.border}`,borderRadius:"6px",color:T.text,fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>
                 {THEMES.map(t => <option key={t}>{t}</option>)}
               </select>
               {filterTheme !== "All Themes" && THEME_TREE[filterTheme] && (
-                <select value={filterSubtheme} onChange={e => setFilterSubtheme(e.target.value)} style={{padding:"7px 13px",background:T.surface,border:`1px solid ${T.accent}55`,borderRadius:"8px",color:T.accentText,fontSize:"13px",cursor:"pointer",fontFamily:"inherit"}}>
+                <select value={filterSubtheme} onChange={e => setFilterSubtheme(e.target.value)} style={{padding:"6px 12px",background:T.surface,border:`1px solid ${T.accent}55`,borderRadius:"6px",color:T.accent,fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>
                   <option value="All">All {filterTheme}</option>
                   {THEME_TREE[filterTheme].map(s => <option key={s}>{s}</option>)}
                 </select>
               )}
               {DIFFICULTIES.map(d => (
-                <button key={d} onClick={() => setFilterDiff(d)} style={{padding:"7px 14px",borderRadius:"8px",border:`1px solid ${filterDiff===d?T.accent:T.border2}`,background:filterDiff===d?"rgba(120,100,255,.15)":"transparent",color:filterDiff===d?T.accentText:T.textMuted,fontSize:"13px",cursor:"pointer",fontWeight:500,fontFamily:"inherit"}}>{d}</button>
+                <button key={d} onClick={() => setFilterDiff(d)} style={{padding:"6px 12px",borderRadius:"6px",border:`1px solid ${filterDiff===d?(dark?"#e0e0e0":"#111"):T.border}`,background:filterDiff===d?(dark?"#fff":"#111"):"transparent",color:filterDiff===d?(dark?"#111":"#fff"):T.textMuted,fontSize:"12px",cursor:"pointer",fontWeight:500,fontFamily:"inherit",transition:"all .2s"}}>{d}</button>
               ))}
             </div>
           )}
 
           {searched && (
-            <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <p style={{fontSize:"14px",color:T.textMuted}}>
-                {results.length > 0 ? <><span style={{color:T.accentText,fontWeight:600}}>{results.length} result{results.length!==1?"s":""}</span> for "{query}"</> : <span>No results for "<b style={{color:T.text}}>{query}</b>"</span>}
+            <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <p style={{fontSize:"13px",color:T.textMuted}}>
+                {results.length > 0 ? <><span style={{color:T.text,fontWeight:600}}>{results.length} result{results.length!==1?"s":""}</span> for &ldquo;{query}&rdquo;</> : <span>No results for &ldquo;<b style={{color:T.text}}>{query}</b>&rdquo;</span>}
               </p>
-              <button onClick={clearSearch} style={{padding:"6px 14px",borderRadius:"8px",border:`1px solid ${T.border2}`,background:"transparent",color:T.textMuted,fontSize:"13px",cursor:"pointer",fontFamily:"inherit"}}>Clear</button>
+              <button onClick={clearSearch} style={{padding:"5px 12px",borderRadius:"6px",border:`1px solid ${T.border}`,background:"transparent",color:T.textMuted,fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>Clear</button>
             </div>
           )}
 
-          <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 60px",display:"grid",gridTemplateColumns:mobile?"1fr":"repeat(auto-fill,minmax(290px,1fr))",gap:"14px"}}>
+          <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 60px",display:"grid",gridTemplateColumns:mobile?"1fr":"repeat(auto-fill,minmax(280px,1fr))",gap:"10px"}}>
             {displayed.map(m => (
-              <div key={m.id} className="card" onClick={() => openMotion(m)} style={{background:T.surface,border:`1px solid ${dark?"#2a2a50":"#d0d0c8"}`,borderRadius:"16px",padding:"22px",boxShadow:dark?"0 4px 24px rgba(0,0,0,.5)":"0 4px 24px rgba(0,0,0,.1)"}}>
-                <div style={{display:"flex",justifyContent:"space-between",marginBottom:"12px"}}>
-                  <span className="pill" style={{background:`${TC[m.theme]||"#333"}22`,color:TC[m.theme]||T.textMuted,border:`1px solid ${TC[m.theme]||"#333"}44`}}>{m.subtheme || m.theme}</span>
-                  <span className="pill" style={{background:`${DC[m.difficulty]}22`,color:DC[m.difficulty],border:`1px solid ${DC[m.difficulty]}44`}}>{m.difficulty}</span>
+              <div key={m.id} className="card" onClick={() => openMotion(m)} style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:"10px",padding:"20px",boxShadow:"none"}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:"10px",alignItems:"flex-start"}}>
+                  <span style={{fontSize:"10px",fontWeight:700,letterSpacing:".07em",textTransform:"uppercase",color:T.textMuted}}>{m.subtheme || m.theme}</span>
+                  <span style={{fontSize:"10px",fontWeight:600,color:T.textMuted,background:T.surface2,padding:"2px 7px",borderRadius:"4px",border:`1px solid ${T.border}`,whiteSpace:"nowrap"}}>{m.difficulty}</span>
                 </div>
-                <p style={{fontSize:"14px",fontWeight:500,lineHeight:1.55,color:T.text,marginBottom:"16px"}}>{m.motion}</p>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <div style={{display:"flex",gap:"12px"}}>
-                    <span style={{fontSize:"12px",color:"#40c090"}}>↑ {getArgs(m,"prop").length} prop</span>
-                    <span style={{fontSize:"12px",color:"#ff7070"}}>↓ {getArgs(m,"opp").length} opp</span>
+                <p style={{fontSize:"14px",fontWeight:600,lineHeight:1.5,color:T.text,marginBottom:"14px"}}>{m.motion}</p>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:`1px solid ${T.border}`,paddingTop:"10px"}}>
+                  <div style={{display:"flex",gap:"10px"}}>
+                    <span style={{fontSize:"11px",color:T.prop,fontWeight:600}}>↑ {getArgs(m,"prop").length} prop</span>
+                    <span style={{fontSize:"11px",color:T.opp,fontWeight:600}}>↓ {getArgs(m,"opp").length} opp</span>
                   </div>
-                  {m.tournament && <span style={{fontSize:"11px",color:T.textFaint}}>{m.tournament}</span>}
+                  {m.tournament && <span style={{fontSize:"10px",color:T.textFaint}}>{m.tournament}</span>}
                 </div>
               </div>
             ))}
             {displayed.length === 0 && (
               <div style={{gridColumn:"1/-1",textAlign:"center",padding:"60px",color:T.textFaint}}>
-                <div style={{fontSize:"36px",marginBottom:"12px"}}>🔍</div>
+                <div style={{fontSize:"32px",marginBottom:"12px"}}>🔍</div>
                 <p>{searched ? "No motions found. Try different keywords." : "No motions yet. Add some via the Admin panel."}</p>
               </div>
             )}
@@ -966,37 +919,36 @@ export default function App() {
 
       {/* DETAIL */}
       {view === "detail" && selected && (
-        <div style={{maxWidth:"880px",margin:"0 auto",padding:mobile?"80px 16px 80px":"36px 24px 60px"}}>
+        <div style={{maxWidth:"860px",margin:"0 auto",padding:mobile?"72px 16px 80px":"40px 24px 60px"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"28px"}}>
-            <button onClick={() => setView("browse")} style={{background:"none",border:"none",color:T.accentText,fontSize:"14px",cursor:"pointer",fontFamily:"inherit"}}>← Back</button>
-            <button onClick={() => exportPDF(selected)} style={{padding:"8px 18px",borderRadius:"8px",border:`1px solid ${T.border2}`,background:T.surface2,color:T.textSub,fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:"6px"}}>
-              ↓ Export PDF
-            </button>
+            <button onClick={() => setView("browse")} style={{background:"none",border:"none",color:T.textMuted,fontSize:"13px",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:"4px"}}>← Back to Browse</button>
+            <button onClick={() => exportPDF(selected)} style={{padding:"7px 16px",borderRadius:"7px",border:`1px solid ${T.border}`,background:"transparent",color:T.textMuted,fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>↓ PDF</button>
           </div>
-          <div style={{display:"flex",gap:"8px",flexWrap:"wrap",marginBottom:"14px",alignItems:"center"}}>
-            <span className="pill" style={{background:`${TC[selected.theme]||"#333"}22`,color:TC[selected.theme]||T.textMuted,border:`1px solid ${TC[selected.theme]||"#333"}44`}}>{selected.theme}</span>
-            <span className="pill" style={{background:`${DC[selected.difficulty]}22`,color:DC[selected.difficulty],border:`1px solid ${DC[selected.difficulty]}44`}}>{selected.difficulty}</span>
-            {selected.tournament && <span style={{fontSize:"12px",color:T.textMuted}}>{selected.tournament}</span>}
+          <div style={{display:"flex",gap:"8px",flexWrap:"wrap",marginBottom:"12px",alignItems:"center"}}>
+            <span style={{fontSize:"10px",fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",color:T.textMuted}}>{selected.theme}</span>
+            <span style={{fontSize:"10px",color:T.textFaint"}}>·</span>
+            <span style={{fontSize:"10px",fontWeight:600,color:T.textMuted}}>{selected.difficulty}</span>
+            {selected.tournament && <><span style={{fontSize:"10px",color:T.textFaint}}>·</span><span style={{fontSize:"10px",color:T.textMuted}}>{selected.tournament}</span></>}
           </div>
           <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(20px,4vw,32px)",lineHeight:1.3,marginBottom:"18px",color:T.text}}>{selected.motion}</h1>
           <div style={{display:"flex",flexWrap:"wrap",gap:"6px",marginBottom:"30px"}}>
             {(selected.keywords||[]).map(k => <span key={k} style={{padding:"3px 11px",background:T.surface2,border:`1px solid ${T.border3}`,borderRadius:"20px",fontSize:"12px",color:T.textSub}}>{k}</span>)}
           </div>
-          <div style={{display:"flex",background:T.surface2,border:`1px solid ${T.border}`,borderRadius:"12px",padding:"4px",width:"fit-content",marginBottom:"24px"}}>
-            {[["prop","Proposition",dark?"#2a6a4a":"#d0f0dc"],["opp","Opposition",dark?"#6a2a2a":"#f0d0d0"]].map(([s,label,col]) => (
-              <button key={s} onClick={() => setSide(s)} style={{padding:"9px 26px",borderRadius:"9px",border:"none",fontWeight:600,fontSize:"14px",cursor:"pointer",background:side===s?col:"transparent",color:side===s?(dark?"#fff":"#1a1a2e"):T.textMuted,fontFamily:"inherit",transition:"all .15s"}}>
+          <div style={{display:"flex",gap:"8px",marginBottom:"24px"}}>
+            {[["prop","Proposition",T.prop],["opp","Opposition",T.opp]].map(([s,label,col]) => (
+              <button key={s} onClick={() => setSide(s)} style={{padding:"9px 22px",borderRadius:"7px",border:`1px solid ${side===s?col:T.border}`,fontWeight:600,fontSize:"13px",cursor:"pointer",background:side===s?(dark?"#111":"#fff"):"transparent",color:side===s?col:T.textMuted,fontFamily:"inherit",transition:"all .15s"}}>
                 {label} ({getArgs(selected,s).length})
               </button>
             ))}
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
             {getArgs(selected, side).map((arg, i) => (
-              <div key={i} style={{background:T.surface,border:`2px solid ${side==="prop"?(dark?"#1e5c36":"#a8d8b8"):(dark?"#5c1e1e":"#d8a8a8")}`,borderRadius:"14px",padding:"22px",boxShadow:dark?"0 4px 20px rgba(0,0,0,.4)":"0 4px 16px rgba(0,0,0,.08)"}}>
+              <div key={i} style={{background:T.surface,border:`1px solid ${side==="prop"?T.propBorder:T.oppBorder}`,borderRadius:"10px",padding:"20px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"12px",marginBottom:"10px"}}>
-                  <h3 style={{fontSize:"15px",fontWeight:600,color:T.text,lineHeight:1.4}}>{arg.name}</h3>
-                  <span style={{padding:"3px 10px",borderRadius:"20px",fontSize:"11px",fontWeight:500,flexShrink:0,background:arg.type==="Principled"?"rgba(120,100,255,.15)":"rgba(40,160,120,.15)",color:arg.type==="Principled"?"#8060ee":"#2a9a70",border:`1px solid ${arg.type==="Principled"?"rgba(120,100,255,.3)":"rgba(40,160,120,.3)"}`}}>{arg.type}</span>
+                  <h3 style={{fontSize:"15px",fontWeight:700,color:T.text,lineHeight:1.35}}>{arg.name}</h3>
+                  <span style={{padding:"2px 9px",borderRadius:"4px",fontSize:"10px",fontWeight:600,flexShrink:0,letterSpacing:".06em",textTransform:"uppercase",background:arg.type==="Principled"?"rgba(2,132,199,.1)":"rgba(22,163,74,.1)",color:arg.type==="Principled"?T.accent:T.prop,border:`1px solid ${arg.type==="Principled"?"rgba(2,132,199,.2)":"rgba(22,163,74,.2)"}`}}>{arg.type}</span>
                 </div>
-                <p style={{fontSize:"14px",color:T.textSub,lineHeight:1.75}}>{arg.summary}</p>
+                <p style={{fontSize:"14px",color:T.textSub,lineHeight:1.8}}>{arg.summary}</p>
               </div>
             ))}
             {getArgs(selected, side).length === 0 && <p style={{color:T.textFaint,textAlign:"center",padding:"40px"}}>No arguments yet for this side.</p>}
@@ -1008,7 +960,7 @@ export default function App() {
       {view === "news" && (
         <div style={{maxWidth:"1080px",margin:"0 auto",padding:mobile?"80px 16px 80px":"40px 24px 60px"}}>
           <div style={{marginBottom:"28px"}}>
-            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"28px",marginBottom:"6px",color:T.text}}>Debate News</h1>
+            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(24px,4vw,38px)",fontWeight:900,marginBottom:"6px",color:T.text,letterSpacing:"-1px"}}>Debate News</h1>
             <p style={{color:T.textMuted,fontSize:"14px"}}>Stay on top of current events across every debate theme.</p>
           </div>
 
@@ -1017,7 +969,7 @@ export default function App() {
             <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
               {["All","Economics","Environment","Technology","International Relations","Criminal Justice","Human Rights","Health"].map(t => (
                 <button key={t} onClick={() => setNewsFilter(t)}
-                  style={{padding:"6px 14px",borderRadius:"8px",border:`1px solid ${newsFilter===t?T.accent:T.border2}`,background:newsFilter===t?"rgba(120,100,255,.15)":"transparent",color:newsFilter===t?T.accentText:T.textMuted,fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit"}}>
+                  style={{padding:"5px 12px",borderRadius:"6px",border:`1px solid ${newsFilter===t?(dark?"#e0e0e0":"#111"):T.border}`,background:newsFilter===t?(dark?"#fff":"#111"):"transparent",color:newsFilter===t?(dark?"#111":"#fff"):T.textMuted,fontSize:"11px",fontWeight:500,cursor:"pointer",fontFamily:"inherit"}}>
                   {t}
                 </button>
               ))}
@@ -1027,12 +979,12 @@ export default function App() {
           {/* Source filter */}
           <div style={{display:"flex",gap:"6px",flexWrap:"wrap",marginBottom:"28px",paddingBottom:"20px",borderBottom:`1px solid ${T.border}`}}>
             <button onClick={() => setNewsSourceFilter("All")}
-              style={{padding:"5px 12px",borderRadius:"20px",border:`1px solid ${newsSourceFilter==="All"?T.accent:T.border2}`,background:newsSourceFilter==="All"?"rgba(120,100,255,.15)":"transparent",color:newsSourceFilter==="All"?T.accentText:T.textMuted,fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>
-              All Sources
+              style={{padding:"4px 11px",borderRadius:"5px",border:`1px solid ${newsSourceFilter==="All"?T.text:T.border}`,background:newsSourceFilter==="All"?T.text:"transparent",color:newsSourceFilter==="All"?(dark?"#111":"#fff"):T.textMuted,fontSize:"11px",cursor:"pointer",fontFamily:"inherit"}}>
+              All
             </button>
             {NEWS_SOURCES.map(s => (
               <button key={s.id} onClick={() => setNewsSourceFilter(s.id)}
-                style={{padding:"5px 12px",borderRadius:"20px",border:`1px solid ${newsSourceFilter===s.id?T.accent:T.border2}`,background:newsSourceFilter===s.id?"rgba(120,100,255,.15)":"transparent",color:newsSourceFilter===s.id?T.accentText:T.textMuted,fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>
+                style={{padding:"4px 11px",borderRadius:"5px",border:`1px solid ${newsSourceFilter===s.id?T.text:T.border}`,background:newsSourceFilter===s.id?T.text:"transparent",color:newsSourceFilter===s.id?(dark?"#111":"#fff"):T.textMuted,fontSize:"11px",cursor:"pointer",fontFamily:"inherit"}}>
                 {s.name}
               </button>
             ))}
@@ -1043,7 +995,7 @@ export default function App() {
             <div style={{textAlign:"center",padding:"60px 0"}}>
               <p style={{color:T.textMuted,marginBottom:"20px",fontSize:"15px"}}>Ready to load the latest news from 10 sources.</p>
               <button onClick={loadNews} disabled={newsLoading}
-                style={{padding:"13px 32px",borderRadius:"12px",border:"none",background:"linear-gradient(135deg,#7864ff,#b0a0ff)",color:"#fff",fontSize:"15px",fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                style={{padding:"12px 28px",borderRadius:"8px",border:"none",background:dark?"#fff":"#111",color:dark?"#111":"#fff",fontSize:"14px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
                 {newsLoading ? "Loading..." : "Load Today's News"}
               </button>
             </div>
@@ -1071,9 +1023,9 @@ export default function App() {
                   )
                   .map(article => (
                     <a key={article.id} href={article.link} target="_blank" rel="noopener noreferrer"
-                      style={{textDecoration:"none",display:"block",background:T.surface,border:`1px solid ${dark?"#2a2a50":"#d0d0c8"}`,borderRadius:"14px",overflow:"hidden",boxShadow:dark?"0 4px 24px rgba(0,0,0,.5)":"0 4px 24px rgba(0,0,0,.1)",transition:"transform .18s,box-shadow .18s",cursor:"pointer"}}
-                      onMouseEnter={e => { e.currentTarget.style.transform="translateY(-3px)"; e.currentTarget.style.boxShadow=dark?"0 14px 40px rgba(100,80,255,.15)":"0 14px 40px rgba(100,80,255,.1)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.transform=""; e.currentTarget.style.boxShadow=dark?"0 4px 20px rgba(0,0,0,.3)":"0 4px 20px rgba(0,0,0,.06)"; }}>
+                      style={{textDecoration:"none",display:"block",background:T.surface,border:`1px solid ${T.border}`,borderRadius:"10px",overflow:"hidden",transition:"border-color .2s,transform .2s",cursor:"pointer"}}
+                      onMouseEnter={e => { e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.borderColor=T.border2; }}
+                      onMouseLeave={e => { e.currentTarget.style.transform=""; e.currentTarget.style.borderColor=T.border; }}>
                       {/* Image */}
                       {article.image ? (
                         <div style={{width:"100%",height:"120px",overflow:"hidden",background:T.surface2}}>
@@ -1081,7 +1033,7 @@ export default function App() {
                             onError={e => { e.target.parentElement.style.display="none"; }} />
                         </div>
                       ) : (
-                        <div style={{width:"100%",height:"100px",background:`linear-gradient(135deg,${TC[article.themes[0]]||"#7864ff"}22,${TC[article.themes[0]]||"#7864ff"}44)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"32px"}}>
+                        <div style={{width:"100%",height:"100px",background:`linear-gradient(135deg,${TC[article.themes[0]]||"#0284c7"}22,${TC[article.themes[0]]||"#0284c7"}44)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"32px"}}>
                           📰
                         </div>
                       )}
@@ -1089,7 +1041,7 @@ export default function App() {
                       <div style={{padding:"16px"}}>
                         {/* Source + theme */}
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
-                          <span style={{fontSize:"11px",fontWeight:700,color:T.accentText,textTransform:"uppercase",letterSpacing:".05em"}}>{article.source}</span>
+                          <span style={{fontSize:"10px",fontWeight:700,color:T.accent,textTransform:"uppercase",letterSpacing:".07em"}}>{article.source}</span>
                           {article.themes.slice(0,1).map(th => (
                             <span key={th} style={{fontSize:"10px",padding:"2px 8px",borderRadius:"20px",background:`${TC[th]||"#333"}22`,color:TC[th]||T.textMuted,border:`1px solid ${TC[th]||"#333"}33`}}>{th}</span>
                           ))}
@@ -1105,7 +1057,7 @@ export default function App() {
                           <span style={{fontSize:"11px",color:T.textFaint}}>
                             {article.pubDate ? new Date(article.pubDate).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : ""}
                           </span>
-                          <span style={{fontSize:"12px",color:T.accentText,fontWeight:600}}>Read →</span>
+                          <span style={{fontSize:"11px",color:T.textMuted,fontWeight:600}}>Read →</span>
                         </div>
                       </div>
                     </a>
@@ -1130,7 +1082,7 @@ export default function App() {
       {view === "chain" && (
         <div style={{maxWidth:"720px",margin:"0 auto",padding:"40px 24px 60px"}}>
           <div style={{marginBottom:"28px"}}>
-            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"28px",marginBottom:"6px",color:T.text}}>Logic Chain Builder</h1>
+            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(24px,4vw,38px)",fontWeight:900,marginBottom:"6px",color:T.text,letterSpacing:"-1px"}}>Logic Chain</h1>
             <p style={{color:T.textMuted,fontSize:"14px",lineHeight:1.6}}>Build your argument step by step. Every link in the chain must hold — or an opponent will break it.</p>
           </div>
 
@@ -1142,7 +1094,7 @@ export default function App() {
             <div style={{display:"flex",gap:"6px"}}>
               {["Proposition","Opposition"].map(s => (
                 <button key={s} onClick={() => setChainSide(s)}
-                  style={{padding:"10px 14px",borderRadius:"8px",border:`1px solid ${chainSide===s?(s==="Proposition"?"#40c09066":"#ff707066"):T.border2}`,background:chainSide===s?(s==="Proposition"?"rgba(40,160,120,.12)":"rgba(255,100,100,.12)"):"transparent",color:chainSide===s?(s==="Proposition"?"#40c090":"#ff7070"):T.textMuted,fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
+                  style={{padding:"9px 14px",borderRadius:"7px",border:`1px solid ${chainSide===s?(s==="Proposition"?T.propBorder:T.oppBorder):T.border}`,background:chainSide===s?(s==="Proposition"?T.propBg:T.oppBg):"transparent",color:chainSide===s?(s==="Proposition"?T.prop:T.opp):T.textMuted,fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
                   {s === "Proposition" ? "Prop" : "Opp"}
                 </button>
               ))}
@@ -1217,30 +1169,30 @@ export default function App() {
           {/* Action buttons */}
           <div style={{display:"flex",gap:"10px",marginBottom:"28px"}}>
             <button onClick={runStressTest} disabled={stressTesting}
-              style={{flex:1,padding:"13px",borderRadius:"10px",border:"none",background:"linear-gradient(135deg,#ff7070,#ffaa44)",color:"#fff",fontSize:"15px",fontWeight:700,cursor:"pointer",fontFamily:"inherit",opacity:stressTesting?0.7:1}}>
+              style={{flex:1,padding:"12px",borderRadius:"8px",border:"none",background:dark?"#fff":"#111",color:dark?"#111":"#fff",fontSize:"14px",fontWeight:700,cursor:"pointer",fontFamily:"inherit",opacity:stressTesting?0.6:1}}>
               {stressTesting ? "Stress testing..." : "⚡ Stress Test this Chain"}
             </button>
             <button onClick={() => { setChainBlocks([{type:"Claim",text:""}]); setStressResult(null); setChainMotion(""); }}
-              style={{padding:"13px 20px",borderRadius:"10px",border:`1px solid ${T.border2}`,background:"transparent",color:T.textMuted,fontSize:"14px",cursor:"pointer",fontFamily:"inherit"}}>
+              style={{padding:"12px 18px",borderRadius:"8px",border:`1px solid ${T.border}`,background:"transparent",color:T.textMuted,fontSize:"13px",cursor:"pointer",fontFamily:"inherit"}}>
               Reset
             </button>
           </div>
 
           {/* Stress test result */}
           {stressResult && (
-            <div style={{background:dark?"#1a0d0d":"#fff5f5",border:"2px solid #ff505066",borderRadius:"14px",padding:"24px",marginBottom:"24px"}}>
-              <p style={{fontSize:"13px",fontWeight:700,color:"#ff5050",textTransform:"uppercase",letterSpacing:".06em",marginBottom:"16px"}}>⚡ Stress Test Result</p>
+            <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:"10px",padding:"22px",marginBottom:"24px"}}>
+              <p style={{fontSize:"11px",fontWeight:700,color:T.textMuted,textTransform:"uppercase",letterSpacing:".1em",marginBottom:"16px"}}>Stress Test Result</p>
               <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
                 <div>
                   <p style={{fontSize:"11px",color:T.textMuted,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",marginBottom:"4px"}}>Verdict</p>
                   <p style={{fontSize:"15px",fontWeight:600,color:T.text,lineHeight:1.5}}>{stressResult.verdict}</p>
                 </div>
-                <div style={{background:dark?"rgba(255,80,80,.08)":"rgba(255,80,80,.05)",border:"1px solid #ff505033",borderRadius:"10px",padding:"14px"}}>
-                  <p style={{fontSize:"11px",color:"#ff5050",fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",marginBottom:"6px"}}>How an opponent attacks it</p>
+                <div style={{background:T.oppBg,border:`1px solid ${T.oppBorder}`,borderRadius:"8px",padding:"14px"}}>
+                  <p style={{fontSize:"10px",color:T.opp,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",marginBottom:"6px"}}>How an opponent attacks it</p>
                   <p style={{fontSize:"14px",color:T.textSub,lineHeight:1.7,fontStyle:"italic"}}>"{stressResult.attack}"</p>
                 </div>
-                <div style={{background:dark?"rgba(120,100,255,.08)":"rgba(120,100,255,.05)",border:`1px solid ${T.accent}33`,borderRadius:"10px",padding:"14px"}}>
-                  <p style={{fontSize:"11px",color:T.accentText,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",marginBottom:"6px"}}>How to fix it</p>
+                <div style={{background:T.propBg,border:`1px solid ${T.propBorder}`,borderRadius:"8px",padding:"14px"}}>
+                  <p style={{fontSize:"10px",color:T.prop,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",marginBottom:"6px"}}>How to strengthen it</p>
                   <p style={{fontSize:"14px",color:T.textSub,lineHeight:1.7}}>{stressResult.fix}</p>
                 </div>
               </div>
@@ -1252,7 +1204,7 @@ export default function App() {
       {/* TIMER */}
       {view === "timer" && (
         <div style={{maxWidth:"520px",margin:"0 auto",padding:"40px 24px 60px"}}>
-          <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"28px",marginBottom:"6px",color:T.text}}>Prep Timer</h1>
+          <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(24px,4vw,38px)",fontWeight:900,marginBottom:"6px",color:T.text,letterSpacing:"-1px"}}>Prep Timer</h1>
           <p style={{color:T.textMuted,fontSize:"14px",marginBottom:"28px"}}>Runs in the background even when you switch tabs.</p>
 
           {!timerRunning ? (
@@ -1263,7 +1215,7 @@ export default function App() {
                 <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
                   {Object.keys(FORMATS).map(f => (
                     <button key={f} onClick={() => setTimerFormat(f)}
-                      style={{padding:"8px 18px",borderRadius:"8px",border:`1px solid ${timerFormat===f?T.accent:T.border2}`,background:timerFormat===f?"rgba(120,100,255,.15)":"transparent",color:timerFormat===f?T.accentText:T.textMuted,fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+                      style={{padding:"8px 16px",borderRadius:"7px",border:`1px solid ${timerFormat===f?(dark?"#e0e0e0":"#111"):T.border}`,background:timerFormat===f?(dark?"#fff":"#111"):"transparent",color:timerFormat===f?(dark?"#111":"#fff"):T.textMuted,fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
                       {f === "WSDC" ? "WSDC (30 min)" : f === "CNDF" ? "CNDF (15 min)" : f === "BP" ? "BP (15 min)" : "Custom"}
                     </button>
                   ))}
@@ -1285,7 +1237,7 @@ export default function App() {
                 <div style={{display:"flex",gap:"8px"}}>
                   {["Proposition","Opposition",""].map((s,i) => (
                     <button key={i} onClick={() => setTimerSide(s)}
-                      style={{padding:"8px 18px",borderRadius:"8px",border:`1px solid ${timerSide===s?(s==="Proposition"?"#40c09066":s==="Opposition"?"#ff707066":T.border2):T.border2}`,background:timerSide===s?(s==="Proposition"?"rgba(40,160,120,.12)":s==="Opposition"?"rgba(255,100,100,.12)":"rgba(120,100,255,.1)"):"transparent",color:timerSide===s?(s==="Proposition"?"#40c090":s==="Opposition"?"#ff7070":T.accentText):T.textMuted,fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+                      style={{padding:"8px 16px",borderRadius:"7px",border:`1px solid ${timerSide===s?(s==="Proposition"?T.propBorder:s==="Opposition"?T.oppBorder:T.border):T.border}`,background:timerSide===s?(s==="Proposition"?T.propBg:s==="Opposition"?T.oppBg:T.surface2):"transparent",color:timerSide===s?(s==="Proposition"?T.prop:s==="Opposition"?T.opp:T.text):T.textMuted,fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
                       {s || "No side"}
                     </button>
                   ))}
@@ -1301,7 +1253,7 @@ export default function App() {
               </div>
 
               <button onClick={startTimer}
-                style={{padding:"14px",borderRadius:"12px",border:"none",background:"linear-gradient(135deg,#7864ff,#b0a0ff)",color:"#fff",fontSize:"16px",fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginTop:"4px"}}>
+                style={{padding:"13px",borderRadius:"8px",border:"none",background:dark?"#fff":"#111",color:dark?"#111":"#fff",fontSize:"15px",fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginTop:"4px"}}>
                 Start Prep
               </button>
             </div>
@@ -1317,25 +1269,25 @@ export default function App() {
 
               {/* Side badge */}
               {timerSide && (
-                <div style={{display:"inline-flex",alignItems:"center",padding:"6px 16px",borderRadius:"20px",background:timerSide==="Proposition"?"rgba(40,160,120,.12)":"rgba(255,100,100,.12)",border:`1px solid ${timerSide==="Proposition"?"#40c09066":"#ff707066"}`,width:"fit-content"}}>
-                  <span style={{fontSize:"13px",fontWeight:600,color:timerSide==="Proposition"?"#40c090":"#ff7070"}}>{timerSide}</span>
+                <div style={{display:"inline-flex",alignItems:"center",padding:"5px 14px",borderRadius:"6px",background:timerSide==="Proposition"?T.propBg:T.oppBg,border:`1px solid ${timerSide==="Proposition"?T.propBorder:T.oppBorder}`,width:"fit-content"}}>
+                  <span style={{fontSize:"12px",fontWeight:700,letterSpacing:".06em",textTransform:"uppercase",color:timerSide==="Proposition"?T.prop:T.opp}}>{timerSide}</span>
                 </div>
               )}
 
               {/* Big clock */}
-              <div style={{textAlign:"center",padding:"32px",background:T.surface,border:`2px solid ${dark?"#2a2a50":"#d0d0c8"}`,borderRadius:"16px",boxShadow:dark?"0 4px 24px rgba(0,0,0,.5)":"0 4px 24px rgba(0,0,0,.1)"}}>
-                <div style={{fontSize:"72px",fontWeight:700,fontFamily:"monospace",color:timerRemaining <= 60?"#ff7070":timerRemaining <= 300?"#ffaa44":T.text,lineHeight:1,marginBottom:"16px",letterSpacing:"2px"}}>
+              <div style={{textAlign:"center",padding:"32px",background:T.surface,border:`1px solid ${T.border}`,borderRadius:"12px"}}>
+                <div style={{fontSize:"72px",fontWeight:900,fontFamily:"'Playfair Display',serif",color:timerRemaining <= 60?T.opp:timerRemaining <= 300?"#d97706":T.text,lineHeight:1,marginBottom:"16px",letterSpacing:"-2px"}}>
                   {formatTime(timerRemaining)}
                 </div>
                 {/* Progress bar */}
                 <div style={{background:T.surface2,borderRadius:"8px",height:"8px",overflow:"hidden"}}>
-                  <div style={{height:"100%",borderRadius:"8px",background:timerRemaining<=60?"#ff7070":timerRemaining<=300?"#ffaa44":"linear-gradient(90deg,#7864ff,#b0a0ff)",width:`${timerProgress()}%`,transition:"width .5s linear"}} />
+                  <div style={{height:"100%",borderRadius:"8px",background:timerRemaining<=60?T.opp:timerRemaining<=300?"#d97706":T.prop,width:`${timerProgress()}%`,transition:"width .5s linear"}} />
                 </div>
                 <p style={{fontSize:"12px",color:T.textMuted,marginTop:"10px"}}>{timerFormat} prep{timerSide ? ` · ${timerSide}` : ""}</p>
               </div>
 
               <button onClick={stopTimer}
-                style={{padding:"12px",borderRadius:"10px",border:`1px solid #cc444444`,background:"transparent",color:"#cc4444",fontSize:"14px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+                style={{padding:"11px",borderRadius:"8px",border:`1px solid ${T.oppBorder}`,background:T.oppBg,color:T.opp,fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
                 Stop Timer
               </button>
             </div>
@@ -1346,28 +1298,28 @@ export default function App() {
       {/* ADMIN */}
       {view === "admin" && (
         <div style={{maxWidth:"780px",margin:"0 auto",padding:"40px 24px 60px"}}>
-          <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"30px",marginBottom:"6px",color:T.text}}>Admin Panel</h1>
+          <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(24px,4vw,38px)",fontWeight:900,marginBottom:"6px",color:T.text,letterSpacing:"-1px"}}>Admin</h1>
           <p style={{color:T.textMuted,fontSize:"14px",marginBottom:"26px"}}>Changes save directly to your Supabase database.</p>
 
           {!adminUnlocked ? (
-            <div style={{background:T.surface,border:`1px solid ${T.border2}`,borderRadius:"14px",padding:"32px",maxWidth:"400px"}}>
+            <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:"10px",padding:"28px",maxWidth:"380px"}}>
               <p style={{fontSize:"14px",color:T.textMuted,marginBottom:"16px"}}>Enter admin password to continue</p>
               <input type="password" style={{...INP,marginBottom:"10px"}} placeholder="Password" value={pwInput} onChange={e => setPwInput(e.target.value)} onKeyDown={e => e.key==="Enter" && checkPassword()} />
               {pwError && <p style={{fontSize:"12px",color:"#ff7070",marginBottom:"10px"}}>Incorrect password</p>}
-              <button onClick={checkPassword} style={{padding:"10px 24px",borderRadius:"8px",border:"none",background:"linear-gradient(135deg,#7864ff,#b0a0ff)",color:"#fff",fontSize:"14px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Unlock</button>
+              <button onClick={checkPassword} style={{padding:"10px 22px",borderRadius:"7px",border:"none",background:dark?"#fff":"#111",color:dark?"#111":"#fff",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Unlock</button>
             </div>
           ) : !serviceKeySet ? (
-            <div style={{background:T.surface,border:`1px solid ${T.border2}`,borderRadius:"14px",padding:"32px",maxWidth:"560px"}}>
+            <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:"10px",padding:"28px",maxWidth:"520px"}}>
               <p style={{fontSize:"15px",fontWeight:600,color:T.text,marginBottom:"8px"}}>Paste your Supabase service key</p>
-              <p style={{fontSize:"13px",color:T.accentText,marginBottom:"16px"}}>Supabase → Settings → API → service_role key</p>
+              <p style={{fontSize:"13px",color:T.textMuted,marginBottom:"16px"}}>Supabase → Settings → API → service_role key</p>
               <input type="password" style={{...INP,marginBottom:"10px"}} placeholder="eyJ..." value={skInput} onChange={e => setSkInput(e.target.value)} />
-              <button onClick={checkServiceKey} style={{padding:"10px 24px",borderRadius:"8px",border:"none",background:"linear-gradient(135deg,#7864ff,#b0a0ff)",color:"#fff",fontSize:"14px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Connect</button>
+              <button onClick={checkServiceKey} style={{padding:"10px 22px",borderRadius:"7px",border:"none",background:dark?"#fff":"#111",color:dark?"#111":"#fff",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Connect</button>
             </div>
           ) : (
             <>
               {!apiKeySet && (
-                <div style={{background:dark?"#0d1a0d":"#f0fff4",border:`1px solid ${dark?"#2a4a2a":"#b0ddc0"}`,borderRadius:"12px",padding:"20px",marginBottom:"24px"}}>
-                  <p style={{fontSize:"14px",fontWeight:600,color:"#2a8a50",marginBottom:"6px"}}>Connect AI Generation (optional)</p>
+                <div style={{background:T.propBg,border:`1px solid ${T.propBorder}`,borderRadius:"8px",padding:"16px",marginBottom:"20px"}}>
+                  <p style={{fontSize:"13px",fontWeight:700,color:T.prop,marginBottom:"5px"}}>Connect AI Generation (optional)</p>
                   <p style={{fontSize:"13px",color:T.textMuted,marginBottom:"12px"}}>Paste your Anthropic API key to enable one-click argument generation.</p>
                   <div style={{display:"flex",gap:"10px"}}>
                     <input type="password" style={{...INP,flex:1}} placeholder="sk-ant-..." value={apiKeyInput} onChange={e => setApiKeyInput(e.target.value)} />
@@ -1378,7 +1330,7 @@ export default function App() {
 
               <div style={{display:"flex",gap:"8px",marginBottom:"28px"}}>
                 {[["add","Add Motion"],["manage",`Manage (${motions.length})`]].map(([t,label]) => (
-                  <button key={t} onClick={() => setAdminTab(t)} style={{padding:"8px 18px",borderRadius:"8px",border:`1px solid ${adminTab===t?T.accent:T.border2}`,background:adminTab===t?"rgba(120,100,255,.15)":"transparent",color:adminTab===t?T.accentText:T.textMuted,fontSize:"13px",cursor:"pointer",fontWeight:500,fontFamily:"inherit"}}>{label}</button>
+                  <button key={t} onClick={() => setAdminTab(t)} style={{padding:"7px 16px",borderRadius:"6px",border:`1px solid ${adminTab===t?(dark?"#e0e0e0":"#111"):T.border}`,background:adminTab===t?(dark?"#fff":"#111"):"transparent",color:adminTab===t?(dark?"#111":"#fff"):T.textMuted,fontSize:"12px",cursor:"pointer",fontWeight:500,fontFamily:"inherit"}}>{label}</button>
                 ))}
               </div>
 
@@ -1399,7 +1351,7 @@ export default function App() {
                   </Lbl>
 
                   <button onClick={generateArguments} disabled={generating || !apiKeySet}
-                    style={{padding:"13px 28px",borderRadius:"10px",border:`1px solid ${apiKeySet?"#40c09066":T.border2}`,background:apiKeySet?(dark?"rgba(40,160,120,.15)":"#f0fff4"):"transparent",color:apiKeySet?"#2a9a60":T.textFaint,fontSize:"14px",fontWeight:700,cursor:apiKeySet?"pointer":"not-allowed",fontFamily:"inherit",transition:"all .2s"}}>
+                    style={{padding:"11px 22px",borderRadius:"7px",border:`1px solid ${apiKeySet?T.propBorder:T.border}`,background:apiKeySet?T.propBg:"transparent",color:apiKeySet?T.prop:T.textFaint,fontSize:"13px",fontWeight:600,cursor:apiKeySet?"pointer":"not-allowed",fontFamily:"inherit",transition:"all .2s"}}>
                     {generating ? "Generating..." : apiKeySet ? "✦ Generate Arguments with AI" : "Connect API key above to enable AI generation"}
                   </button>
 
@@ -1420,10 +1372,10 @@ export default function App() {
                   ))}
 
                   <div style={{display:"flex",gap:"10px",marginTop:"6px"}}>
-                    <button onClick={editingId ? saveEdit : submit} disabled={saving} style={{flex:1,padding:"13px 28px",borderRadius:"10px",border:"none",background:"linear-gradient(135deg,#7864ff,#b0a0ff)",color:"#fff",fontSize:"15px",fontWeight:700,cursor:"pointer",fontFamily:"inherit",opacity:saving?0.7:1}}>
+                    <button onClick={editingId ? saveEdit : submit} disabled={saving} style={{flex:1,padding:"12px 22px",borderRadius:"7px",border:"none",background:dark?"#fff":"#111",color:dark?"#111":"#fff",fontSize:"14px",fontWeight:700,cursor:"pointer",fontFamily:"inherit",opacity:saving?0.6:1}}>
                       {saving ? "Saving..." : editingId ? "Update Motion" : "Save Motion to Database"}
                     </button>
-                    {editingId && <button onClick={() => { setForm(EMPTY_FORM); setEditingId(null); }} style={{padding:"13px 20px",borderRadius:"10px",border:`1px solid ${T.border2}`,background:"transparent",color:T.textMuted,fontSize:"14px",cursor:"pointer",fontFamily:"inherit"}}>Cancel</button>}
+                    {editingId && <button onClick={() => { setForm(EMPTY_FORM); setEditingId(null); }} style={{padding:"12px 18px",borderRadius:"7px",border:`1px solid ${T.border}`,background:"transparent",color:T.textMuted,fontSize:"13px",cursor:"pointer",fontFamily:"inherit"}}>Cancel</button>}
                   </div>
                 </div>
               )}
@@ -1435,17 +1387,17 @@ export default function App() {
                       <p style={{fontSize:"14px",fontWeight:600,color:T.text,marginBottom:"3px"}}>Export all motions</p>
                       <p style={{fontSize:"12px",color:T.textMuted}}>Download a backup file of everything in your database</p>
                     </div>
-                    <button onClick={exportData} style={{padding:"9px 20px",borderRadius:"8px",border:`1px solid ${T.accent}55`,background:"rgba(120,100,255,.15)",color:T.accentText,fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>Export ({motions.length})</button>
+                    <button onClick={exportData} style={{padding:"8px 16px",borderRadius:"6px",border:`1px solid ${T.border}`,background:"transparent",color:T.textMuted,fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>↓ Export ({motions.length})</button>
                   </div>
                   {motions.map(m => (
-                    <div key={m.id} style={{display:"flex",alignItems:"center",gap:"12px",padding:"14px 18px",background:T.surface,border:`1px solid ${dark?"#2a2a50":"#d0d0c8"}`,borderRadius:"10px",boxShadow:dark?"0 2px 12px rgba(0,0,0,.3)":"0 2px 12px rgba(0,0,0,.07)"}}>
+                    <div key={m.id} style={{display:"flex",alignItems:"center",gap:"10px",padding:"12px 16px",background:T.surface,border:`1px solid ${T.border}`,borderRadius:"8px"}}>
                       <div style={{flex:1,minWidth:0}}>
                         <p style={{fontSize:"14px",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:"3px",color:T.text}}>{m.motion}</p>
                         <p style={{fontSize:"12px",color:T.textMuted}}>{m.theme} · {getArgs(m,"prop").length} prop · {getArgs(m,"opp").length} opp</p>
                       </div>
                       <button onClick={() => openMotion(m)} style={{padding:"5px 12px",borderRadius:"6px",border:`1px solid ${T.border3}`,background:"transparent",color:T.textSub,fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>View</button>
-                      <button onClick={() => startEdit(m)} style={{padding:"5px 12px",borderRadius:"6px",border:`1px solid ${T.accent}55`,background:"rgba(120,100,255,.1)",color:T.accentText,fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>Edit</button>
-                      <button onClick={() => deleteMotion(m.id)} style={{padding:"5px 12px",borderRadius:"6px",border:"1px solid #cc444444",background:"transparent",color:"#cc4444",fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>Delete</button>
+                      <button onClick={() => startEdit(m)} style={{padding:"5px 11px",borderRadius:"5px",border:`1px solid ${T.border}`,background:"transparent",color:T.textMuted,fontSize:"11px",cursor:"pointer",fontFamily:"inherit"}}>Edit</button>
+                      <button onClick={() => deleteMotion(m.id)} style={{padding:"5px 11px",borderRadius:"5px",border:`1px solid ${T.oppBorder}`,background:"transparent",color:T.opp,fontSize:"11px",cursor:"pointer",fontFamily:"inherit"}}>Delete</button>
                     </div>
                   ))}
                 </div>
