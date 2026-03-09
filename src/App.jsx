@@ -926,7 +926,7 @@ export default function App() {
           </div>
           <div style={{display:"flex",gap:"8px",flexWrap:"wrap",marginBottom:"12px",alignItems:"center"}}>
             <span style={{fontSize:"10px",fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",color:T.textMuted}}>{selected.theme}</span>
-            <span style={{fontSize:"10px",color:T.textFaint"}}>·</span>
+            <span style={{fontSize:"10px",color:T.textFaint}}>·</span>
             <span style={{fontSize:"10px",fontWeight:600,color:T.textMuted}}>{selected.difficulty}</span>
             {selected.tournament && <><span style={{fontSize:"10px",color:T.textFaint}}>·</span><span style={{fontSize:"10px",color:T.textMuted}}>{selected.tournament}</span></>}
           </div>
@@ -1419,3 +1419,4 @@ function Lbl({ label, color, children }) {
     </div>
   );
 }
+
