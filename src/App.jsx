@@ -82,8 +82,21 @@ function runSearch(query, motions) {
 }
 
 // Theme and difficulty colors — work for both light and dark
-const TC = {"Environment":"#2d6a4f","Technology":"#1a4a7a","International Relations":"#5a3e8a","Criminal Justice":"#7a3e3e","Economics":"#7a6200","Human Rights":"#1a6a6a","Gender & Identity":"#6a2d6a","Health":"#2d5a7a"};
-const DC = {"Easy":"#2d6a4f","Medium":"#7a6200","Hard":"#7a3e3e"};
+const TC = {
+  "Environment":            { text:"#16a34a", bg:"rgba(22,163,74,.1)",  border:"rgba(22,163,74,.25)" },
+  "Technology":             { text:"#0284c7", bg:"rgba(2,132,199,.1)",  border:"rgba(2,132,199,.25)" },
+  "International Relations":{ text:"#7c3aed", bg:"rgba(124,58,237,.1)", border:"rgba(124,58,237,.25)" },
+  "Criminal Justice":       { text:"#dc2626", bg:"rgba(220,38,38,.1)",  border:"rgba(220,38,38,.25)" },
+  "Economics":              { text:"#d97706", bg:"rgba(217,119,6,.1)",  border:"rgba(217,119,6,.25)" },
+  "Human Rights":           { text:"#0891b2", bg:"rgba(8,145,178,.1)",  border:"rgba(8,145,178,.25)" },
+  "Gender & Identity":      { text:"#db2777", bg:"rgba(219,39,119,.1)", border:"rgba(219,39,119,.25)" },
+  "Health":                 { text:"#059669", bg:"rgba(5,150,105,.1)",  border:"rgba(5,150,105,.25)" },
+};
+const DC = {
+  "Easy":   { text:"#16a34a", bg:"rgba(22,163,74,.1)",  border:"rgba(22,163,74,.25)" },
+  "Medium": { text:"#d97706", bg:"rgba(217,119,6,.1)",  border:"rgba(217,119,6,.25)" },
+  "Hard":   { text:"#dc2626", bg:"rgba(220,38,38,.1)",  border:"rgba(220,38,38,.25)" },
+};
 
 // V2 — editorial, clean, black/white/grey
 const DARK = {
@@ -278,6 +291,8 @@ export default function App() {
 
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   const [mobile, setMobile] = React.useState(isMobile);
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+
   React.useEffect(() => {
     const handler = () => setMobile(window.innerWidth < 768);
     window.addEventListener("resize", handler);
@@ -298,6 +313,7 @@ export default function App() {
       .sidebar{display:none!important;}
       .main-content{margin-left:0!important;padding-bottom:72px;}
     }
+    .sidebar{overflow:hidden;}
     @media(min-width:769px){
       .bottom-tab-bar{display:none!important;}
     }
@@ -765,16 +781,32 @@ export default function App() {
         </div>
       )}
 
-      {/* SIDEBAR v2 */}
-      <div className="sidebar" style={{width:"200px",minHeight:"100vh",background:T.surface,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",position:"fixed",top:0,left:0,zIndex:99,fontFamily:"'DM Sans',sans-serif"}}>
-        <div onClick={() => { setView("browse"); clearSearch(); }} style={{padding:"20px 18px 16px",cursor:"pointer",borderBottom:`1px solid ${T.border}`}}>
-          <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"3px"}}>
-            <div style={{width:"26px",height:"26px",borderRadius:"6px",background:dark?"#1a1a1a":"#111",border:`1px solid ${dark?"#333":"#222"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px",flexShrink:0}}>⚖</div>
-            <span style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"15px",color:T.text}}>DebateVault</span>
+      {/* SIDEBAR — collapsible on hover */}
+      <div className="sidebar"
+        onMouseEnter={()=>setSidebarOpen(true)}
+        onMouseLeave={()=>setSidebarOpen(false)}
+        style={{
+          width: sidebarOpen ? "200px" : "52px",
+          minHeight:"100vh", background:T.surface,
+          borderRight:`1px solid ${T.border}`,
+          display:"flex", flexDirection:"column",
+          position:"fixed", top:0, left:0, zIndex:99,
+          fontFamily:"'DM Sans',sans-serif",
+          transition:"width .25s cubic-bezier(.4,0,.2,1)",
+          overflow:"hidden",
+        }}>
+        {/* Logo */}
+        <div onClick={()=>{setView("browse");clearSearch();}}
+          style={{padding:"16px 14px",cursor:"pointer",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:"10px",minHeight:"56px",flexShrink:0}}>
+          <div style={{width:"24px",height:"24px",borderRadius:"6px",background:dark?"#1a1a1a":"#111",border:`1px solid ${dark?"#333":"#222"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",flexShrink:0}}>⚖</div>
+          <div style={{overflow:"hidden",whiteSpace:"nowrap",opacity:sidebarOpen?1:0,transition:"opacity .2s",minWidth:0}}>
+            <div style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"14px",color:T.text,lineHeight:1.2}}>DebateVault</div>
+            <div style={{fontSize:"10px",color:T.textMuted,letterSpacing:".04em"}}>{motions.length} motions</div>
           </div>
-          <span style={{fontSize:"10px",color:T.textMuted,marginLeft:"34px",letterSpacing:".05em"}}>{motions.length} motions</span>
         </div>
-        <nav style={{padding:"10px 10px",flex:1,display:"flex",flexDirection:"column",gap:"2px"}}>
+
+        {/* Nav */}
+        <nav style={{padding:"8px 8px",flex:1,display:"flex",flexDirection:"column",gap:"2px"}}>
           {[
             ["browse","🗂","Browse"],
             ["timer","⏱","Prep Timer"],
@@ -785,23 +817,34 @@ export default function App() {
             const active = view===v||(view==="detail"&&v==="browse");
             return (
               <button key={v} onClick={()=>{setView(v);if(v==="browse")clearSearch();}}
-                style={{display:"flex",alignItems:"center",gap:"10px",padding:"9px 12px",borderRadius:"7px",border:"none",background:active?(dark?"#1a1a1a":"#f0f0f0"):"transparent",color:active?T.text:T.textMuted,fontSize:"13px",fontWeight:active?600:400,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all .15s",width:"100%"}}>
-                <span style={{fontSize:"15px",width:"18px",textAlign:"center",flexShrink:0}}>{icon}</span>
-                {label}
+                title={!sidebarOpen ? label : ""}
+                style={{display:"flex",alignItems:"center",gap:"10px",padding:"9px 10px",borderRadius:"7px",border:"none",background:active?(dark?"#1a1a1a":"#f0f0f0"):"transparent",color:active?T.text:T.textMuted,fontSize:"13px",fontWeight:active?600:400,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all .15s",width:"100%",whiteSpace:"nowrap"}}>
+                <span style={{fontSize:"16px",width:"20px",textAlign:"center",flexShrink:0,lineHeight:1}}>{icon}</span>
+                <span style={{opacity:sidebarOpen?1:0,transition:"opacity .15s",overflow:"hidden"}}>{label}</span>
               </button>
             );
           })}
         </nav>
-        <div style={{padding:"12px 10px",borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:"8px",justifyContent:"space-between"}}>
-          <span style={{fontSize:"11px",color:T.textMuted,paddingLeft:"4px"}}>{dark?"Dark":"Light"}</span>
-          <div onClick={()=>setDark(d=>!d)} style={{display:"flex",width:"44px",height:"24px",padding:"2px",borderRadius:"100px",cursor:"pointer",background:dark?"#1a1a1a":"#efefef",border:`1px solid ${T.border}`,alignItems:"center",transition:"all .3s",flexShrink:0}}>
-            <div style={{width:"18px",height:"18px",borderRadius:"50%",background:dark?"#444":"#ddd",transform:dark?"translateX(0)":"translateX(20px)",transition:"transform .3s cubic-bezier(.34,1.56,.64,1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"10px"}}>{dark?"🌙":"☀️"}</div>
-          </div>
+
+        {/* Bottom */}
+        <div style={{padding:"8px 8px",borderTop:`1px solid ${T.border}`,display:"flex",flexDirection:"column",gap:"2px",flexShrink:0}}>
+          <button onClick={()=>{sessionStorage.removeItem("dv-entered");setShowLanding(true);}}
+            title={!sidebarOpen?"Home":""}
+            style={{display:"flex",alignItems:"center",gap:"10px",padding:"9px 10px",borderRadius:"7px",border:"none",background:"transparent",color:T.textMuted,fontSize:"13px",cursor:"pointer",fontFamily:"inherit",textAlign:"left",width:"100%",whiteSpace:"nowrap"}}>
+            <span style={{fontSize:"16px",width:"20px",textAlign:"center",flexShrink:0}}>←</span>
+            <span style={{opacity:sidebarOpen?1:0,transition:"opacity .15s"}}>Home</span>
+          </button>
+          <button onClick={()=>setDark(d=>!d)}
+            title={!sidebarOpen?(dark?"Light mode":"Dark mode"):""}
+            style={{display:"flex",alignItems:"center",gap:"10px",padding:"9px 10px",borderRadius:"7px",border:"none",background:"transparent",color:T.textMuted,fontSize:"13px",cursor:"pointer",fontFamily:"inherit",textAlign:"left",width:"100%",whiteSpace:"nowrap"}}>
+            <span style={{fontSize:"16px",width:"20px",textAlign:"center",flexShrink:0}}>{dark?"☀️":"🌙"}</span>
+            <span style={{opacity:sidebarOpen?1:0,transition:"opacity .15s"}}>{dark?"Light":"Dark"}</span>
+          </button>
         </div>
       </div>
 
       {/* MAIN CONTENT */}
-      <div className="main-content" style={{marginLeft:"200px",flex:1,minWidth:0}}>
+      <div className="main-content" style={{marginLeft:"52px",flex:1,minWidth:0,transition:"margin-left .25s cubic-bezier(.4,0,.2,1)"}}>
 
       {/* MOBILE TOP BAR */}
       {mobile && (
@@ -893,9 +936,9 @@ export default function App() {
           <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 60px",display:"grid",gridTemplateColumns:mobile?"1fr":"repeat(auto-fill,minmax(280px,1fr))",gap:"10px"}}>
             {displayed.map(m => (
               <div key={m.id} className="card" onClick={() => openMotion(m)} style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:"10px",padding:"20px",boxShadow:"none"}}>
-                <div style={{display:"flex",justifyContent:"space-between",marginBottom:"10px",alignItems:"flex-start"}}>
-                  <span style={{fontSize:"10px",fontWeight:700,letterSpacing:".07em",textTransform:"uppercase",color:T.textMuted}}>{m.subtheme || m.theme}</span>
-                  <span style={{fontSize:"10px",fontWeight:600,color:T.textMuted,background:T.surface2,padding:"2px 7px",borderRadius:"4px",border:`1px solid ${T.border}`,whiteSpace:"nowrap"}}>{m.difficulty}</span>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:"10px",alignItems:"flex-start",gap:"6px"}}>
+                  <span style={{fontSize:"10px",fontWeight:700,letterSpacing:".06em",textTransform:"uppercase",color:(TC[m.theme]||{text:T.textMuted}).text,background:(TC[m.theme]||{bg:"transparent"}).bg,border:`1px solid ${(TC[m.theme]||{border:T.border}).border}`,padding:"2px 7px",borderRadius:"4px",whiteSpace:"nowrap"}}>{m.subtheme || m.theme}</span>
+                  <span style={{fontSize:"10px",fontWeight:600,color:(DC[m.difficulty]||{text:T.textMuted}).text,background:(DC[m.difficulty]||{bg:"transparent"}).bg,border:`1px solid ${(DC[m.difficulty]||{border:T.border}).border}`,padding:"2px 7px",borderRadius:"4px",whiteSpace:"nowrap",flexShrink:0}}>{m.difficulty}</span>
                 </div>
                 <p style={{fontSize:"14px",fontWeight:600,lineHeight:1.5,color:T.text,marginBottom:"14px"}}>{m.motion}</p>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:`1px solid ${T.border}`,paddingTop:"10px"}}>
@@ -924,11 +967,10 @@ export default function App() {
             <button onClick={() => setView("browse")} style={{background:"none",border:"none",color:T.textMuted,fontSize:"13px",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:"4px"}}>← Back to Browse</button>
             <button onClick={() => exportPDF(selected)} style={{padding:"7px 16px",borderRadius:"7px",border:`1px solid ${T.border}`,background:"transparent",color:T.textMuted,fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>↓ PDF</button>
           </div>
-          <div style={{display:"flex",gap:"8px",flexWrap:"wrap",marginBottom:"12px",alignItems:"center"}}>
-            <span style={{fontSize:"10px",fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",color:T.textMuted}}>{selected.theme}</span>
-            <span style={{fontSize:"10px",color:T.textFaint}}>·</span>
-            <span style={{fontSize:"10px",fontWeight:600,color:T.textMuted}}>{selected.difficulty}</span>
-            {selected.tournament && <><span style={{fontSize:"10px",color:T.textFaint}}>·</span><span style={{fontSize:"10px",color:T.textMuted}}>{selected.tournament}</span></>}
+          <div style={{display:"flex",gap:"6px",flexWrap:"wrap",marginBottom:"12px",alignItems:"center"}}>
+            <span style={{fontSize:"10px",fontWeight:700,letterSpacing:".06em",textTransform:"uppercase",color:(TC[selected.theme]||{text:T.textMuted}).text,background:(TC[selected.theme]||{bg:"transparent"}).bg,border:`1px solid ${(TC[selected.theme]||{border:T.border}).border}`,padding:"2px 8px",borderRadius:"4px"}}>{selected.theme}</span>
+            <span style={{fontSize:"10px",fontWeight:600,color:(DC[selected.difficulty]||{text:T.textMuted}).text,background:(DC[selected.difficulty]||{bg:"transparent"}).bg,border:`1px solid ${(DC[selected.difficulty]||{border:T.border}).border}`,padding:"2px 8px",borderRadius:"4px"}}>{selected.difficulty}</span>
+            {selected.tournament && <span style={{fontSize:"10px",color:T.textMuted,padding:"2px 8px",border:`1px solid ${T.border}`,borderRadius:"4px"}}>{selected.tournament}</span>}
           </div>
           <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(20px,4vw,32px)",lineHeight:1.3,marginBottom:"18px",color:T.text}}>{selected.motion}</h1>
           <div style={{display:"flex",flexWrap:"wrap",gap:"6px",marginBottom:"30px"}}>
@@ -1033,7 +1075,7 @@ export default function App() {
                             onError={e => { e.target.parentElement.style.display="none"; }} />
                         </div>
                       ) : (
-                        <div style={{width:"100%",height:"100px",background:`linear-gradient(135deg,${TC[article.themes[0]]||"#0284c7"}22,${TC[article.themes[0]]||"#0284c7"}44)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"32px"}}>
+                        <div style={{width:"100%",height:"100px",background:`linear-gradient(135deg,${(TC[article.themes[0]]||{bg:"rgba(2,132,199,.15)"}).bg},${(TC[article.themes[0]]||{border:"rgba(2,132,199,.3)"}).border})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"32px"}}>
                           📰
                         </div>
                       )}
@@ -1043,7 +1085,7 @@ export default function App() {
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
                           <span style={{fontSize:"10px",fontWeight:700,color:T.accent,textTransform:"uppercase",letterSpacing:".07em"}}>{article.source}</span>
                           {article.themes.slice(0,1).map(th => (
-                            <span key={th} style={{fontSize:"10px",padding:"2px 8px",borderRadius:"20px",background:`${TC[th]||"#333"}22`,color:TC[th]||T.textMuted,border:`1px solid ${TC[th]||"#333"}33`}}>{th}</span>
+                            <span key={th} style={{fontSize:"10px",padding:"2px 7px",borderRadius:"4px",background:(TC[th]||{bg:"transparent"}).bg,color:(TC[th]||{text:T.textMuted}).text,border:`1px solid ${(TC[th]||{border:T.border}).border}`,fontWeight:600}}>{th}</span>
                           ))}
                         </div>
                         {/* Title */}
@@ -1419,4 +1461,3 @@ function Lbl({ label, color, children }) {
     </div>
   );
 }
-
