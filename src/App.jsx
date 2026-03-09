@@ -109,6 +109,8 @@ export default function App() {
     const saved = localStorage.getItem("debatevault-theme");
     return saved !== null ? saved === "dark" : true;
   });
+  const [intro, setIntro] = useState(true);
+  const [introPhase, setIntroPhase] = useState(0); // 0=logo, 1=tagline, 2=zoom out, 3=done
   const T = dark ? DARK : LIGHT;
 
   const [motions, setMotions] = useState([]);
@@ -296,6 +298,19 @@ export default function App() {
     @media(min-width:769px){
       .bottom-tab-bar{display:none!important;}
     }
+    @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes scaleIn{from{opacity:0;transform:scale(1.08)}to{opacity:1;transform:scale(1)}}
+    @keyframes slideLeft{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes bloomBg{from{opacity:0}to{opacity:1}}
+    @keyframes zoomOut{from{transform:scale(1.15);opacity:0}to{transform:scale(1);opacity:1}}
+    @keyframes letterIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes lineDraw{from{width:0}to{width:100%}}
+    @keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
+    .intro-char{display:inline-block;animation:letterIn .4s cubic-bezier(.22,1,.36,1) both;}
+    .card-stagger{animation:fadeUp .5s cubic-bezier(.22,1,.36,1) both;}
+    .sidebar-animate{animation:slideLeft .6s cubic-bezier(.22,1,.36,1) both;}
+    .page-enter{animation:scaleIn .4s cubic-bezier(.22,1,.36,1) both;}
   `;
 
   useEffect(() => {
@@ -311,6 +326,16 @@ export default function App() {
     }
     load();
   }, []);
+
+  // Intro animation sequence
+  useEffect(() => {
+    if (!intro) return;
+    const t1 = setTimeout(() => setIntroPhase(1), 600);   // tagline appears
+    const t2 = setTimeout(() => setIntroPhase(2), 1600);  // line draws
+    const t3 = setTimeout(() => setIntroPhase(3), 2400);  // zoom out begins
+    const t4 = setTimeout(() => setIntro(false), 3200);   // done
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+  }, [intro]);
 
   function showToast(msg, isError = false) {
     setToast({ msg, isError });
@@ -643,8 +668,134 @@ export default function App() {
     </div>
   );
 
+  // INTRO SCREEN
+  if (intro) return (
+    <div style={{
+      position:"fixed",inset:0,
+      background:"#050510",
+      display:"flex",flexDirection:"column",
+      alignItems:"center",justifyContent:"center",
+      zIndex:9999,
+      fontFamily:"'DM Sans',sans-serif",
+      overflow:"hidden",
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap');
+        @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        @keyframes lineDraw{from{width:0}to{width:60%}}
+        @keyframes bloomBg{from{transform:scale(0.6);opacity:0}to{transform:scale(1);opacity:1}}
+        @keyframes letterIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes pulse{0%,100%{opacity:.4}50%{opacity:.9}}
+        @keyframes zoomFade{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.08)}}
+      `}</style>
+
+      {/* Ambient background glow */}
+      <div style={{
+        position:"absolute",inset:0,
+        background:"radial-gradient(ellipse 80% 60% at 50% 50%, rgba(120,100,255,.12) 0%, transparent 70%)",
+        animation:"bloomBg 1.2s cubic-bezier(.22,1,.36,1) both",
+        animationDelay:".2s",
+        opacity:0,
+      }} />
+
+      {/* Subtle grid lines */}
+      <div style={{
+        position:"absolute",inset:0,
+        backgroundImage:"linear-gradient(rgba(120,100,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(120,100,255,.04) 1px,transparent 1px)",
+        backgroundSize:"60px 60px",
+        animation:"fadeIn 1s ease both",
+        animationDelay:".3s",
+        opacity:0,
+      }} />
+
+      {/* Logo mark */}
+      <div style={{
+        width:"64px",height:"64px",
+        borderRadius:"18px",
+        background:"linear-gradient(135deg,#7864ff,#b0a0ff)",
+        display:"flex",alignItems:"center",justifyContent:"center",
+        fontSize:"28px",
+        marginBottom:"28px",
+        boxShadow:"0 0 60px rgba(120,100,255,.4)",
+        animation:"fadeUp .7s cubic-bezier(.22,1,.36,1) both",
+        animationDelay:".1s",
+        opacity:0,
+      }}>⚖</div>
+
+      {/* Main title — letters animate in */}
+      <div style={{
+        fontFamily:"'Playfair Display',serif",
+        fontSize:"clamp(36px,8vw,72px)",
+        fontWeight:900,
+        color:"#f0f0fa",
+        letterSpacing:"-1px",
+        lineHeight:1.1,
+        textAlign:"center",
+        marginBottom:"16px",
+        animation:"fadeUp .8s cubic-bezier(.22,1,.36,1) both",
+        animationDelay:".2s",
+        opacity:0,
+      }}>
+        DebateVault
+      </div>
+
+      {/* Animated underline */}
+      {introPhase >= 2 && (
+        <div style={{
+          height:"2px",
+          background:"linear-gradient(90deg,transparent,#7864ff,#b0a0ff,transparent)",
+          borderRadius:"2px",
+          marginBottom:"24px",
+          width:"60%",
+          animation:"lineDraw .8s cubic-bezier(.22,1,.36,1) both",
+        }} />
+      )}
+
+      {/* Tagline */}
+      {introPhase >= 1 && (
+        <div style={{
+          fontSize:"clamp(14px,2vw,18px)",
+          color:"#7070a0",
+          letterSpacing:".15em",
+          textTransform:"uppercase",
+          fontWeight:500,
+          textAlign:"center",
+          animation:"fadeUp .7s cubic-bezier(.22,1,.36,1) both",
+          opacity:0,
+        }}>
+          Every argument. Every motion.
+        </div>
+      )}
+
+      {/* Loading dots */}
+      {introPhase >= 2 && (
+        <div style={{display:"flex",gap:"6px",marginTop:"48px"}}>
+          {[0,1,2].map(i => (
+            <div key={i} style={{
+              width:"6px",height:"6px",borderRadius:"50%",
+              background:"#7864ff",
+              animation:"pulse 1.2s ease infinite",
+              animationDelay:`${i*0.2}s`,
+            }} />
+          ))}
+        </div>
+      )}
+
+      {/* Zoom out overlay for exit */}
+      {introPhase >= 3 && (
+        <div style={{
+          position:"absolute",inset:0,
+          background:"#050510",
+          animation:"fadeIn .6s ease both",
+          animationFillMode:"forwards",
+        }} />
+      )}
+    </div>
+  );
+
   return (
-    <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif",transition:"background .2s,color .2s",display:"flex"}}>
+    <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif",transition:"background .2s,color .2s",display:"flex",animation:"fadeIn .5s ease both"}}>
       <style>{STYLES}</style>
 
       {toast && (
