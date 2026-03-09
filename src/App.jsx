@@ -102,7 +102,7 @@ const DC = {
 const DARK = {
   bg: "#0a0a0a", surface: "#111111", surface2: "#161616", surface3: "#1a1a1a",
   border: "#222222", border2: "#2a2a2a", border3: "#333333",
-  text: "#f0f0f0", textSub: "#aaaaaa", textMuted: "#666666", textFaint: "#444444",
+  text: "#f0f0f0", textSub: "#cccccc", textMuted: "#999999", textFaint: "#666666",
   nav: "rgba(10,10,10,0.92)", accent: "#0284c7", accentText: "#38bdf8",
   prop: "#16a34a", opp: "#dc2626", propBg: "rgba(22,163,74,.08)", oppBg: "rgba(220,38,38,.08)",
   propBorder: "rgba(22,163,74,.2)", oppBorder: "rgba(220,38,38,.2)",
@@ -111,7 +111,7 @@ const DARK = {
 const LIGHT = {
   bg: "#fafafa", surface: "#ffffff", surface2: "#f5f5f5", surface3: "#efefef",
   border: "#e8e8e8", border2: "#dddddd", border3: "#cccccc",
-  text: "#111111", textSub: "#555555", textMuted: "#999999", textFaint: "#bbbbbb",
+  text: "#111111", textSub: "#444444", textMuted: "#666666", textFaint: "#999999",
   nav: "rgba(250,250,250,0.92)", accent: "#0284c7", accentText: "#0284c7",
   prop: "#16a34a", opp: "#dc2626", propBg: "rgba(22,163,74,.06)", oppBg: "rgba(220,38,38,.06)",
   propBorder: "rgba(22,163,74,.2)", oppBorder: "rgba(220,38,38,.2)",
@@ -134,41 +134,41 @@ const SEARCH_EXAMPLES = [
   "wealth tax",
 ];
 
-function AnimatedPlaceholder({ query }) {
+function AnimatedPlaceholder({ query, dark }) {
   const [idx, setIdx] = React.useState(0);
   const [visible, setVisible] = React.useState(true);
 
   React.useEffect(() => {
-    if (query) return; // stop when user is typing
+    if (query) return;
     const cycle = setInterval(() => {
       setVisible(false);
       setTimeout(() => {
         setIdx(i => (i + 1) % SEARCH_EXAMPLES.length);
         setVisible(true);
-      }, 400);
-    }, 2800);
+      }, 350);
+    }, 2600);
     return () => clearInterval(cycle);
   }, [query]);
 
-  if (query) return null;
-
   return (
     <span style={{
-      position:"absolute", left:"42px", top:"50%", transform:"translateY(-50%)",
-      pointerEvents:"none", fontSize:"14px", userSelect:"none",
-      display:"flex", alignItems:"center", gap:"4px",
-      color:"transparent",
+      position:"absolute", left:"44px", top:"50%", transform:"translateY(-50%)",
+      pointerEvents:"none", fontSize:"15px", userSelect:"none",
+      display:"flex", alignItems:"center", gap:"0",
+      zIndex:3, whiteSpace:"nowrap",
+      opacity: query ? 0 : 1,
+      transition:"opacity .15s",
     }}>
-      <span style={{color:"#aaa"}}>Try&nbsp;</span>
+      <span style={{color: dark ? "#666" : "#aaa"}}>Try&nbsp;</span>
       <span style={{
-        color:"#888",
+        color: dark ? "#888" : "#777",
         opacity: visible ? 1 : 0,
-        filter: visible ? "blur(0px)" : "blur(6px)",
-        transform: visible ? "translateY(0)" : "translateY(6px)",
-        transition: "opacity .35s ease, filter .35s ease, transform .35s ease",
+        filter: visible ? "blur(0px)" : "blur(8px)",
+        transform: visible ? "translateY(0px)" : "translateY(5px)",
+        transition: "opacity .3s ease, filter .3s ease, transform .3s ease",
         display:"inline-block",
       }}>
-        "{SEARCH_EXAMPLES[idx]}"
+        &ldquo;{SEARCH_EXAMPLES[idx]}&rdquo;
       </span>
     </span>
   );
@@ -368,6 +368,10 @@ export default function App() {
       .main-content{margin-left:0!important;padding-bottom:72px;}
     }
     .sidebar{overflow:hidden;}
+    .sb-btn{position:relative;overflow:hidden;}
+    .sb-btn::after{content:'';position:absolute;inset:0;background:currentColor;opacity:0;border-radius:8px;transition:opacity .15s ease;}
+    .sb-btn:hover::after{opacity:0.06;}
+    .sb-btn:active::after{opacity:0.12;}
     @media(min-width:769px){
       .bottom-tab-bar{display:none!important;}
     }
@@ -870,7 +874,7 @@ export default function App() {
           ].map(([v,icon,label]) => {
             const active = view===v||(view==="detail"&&v==="browse");
             return (
-              <button key={v} onClick={()=>{setView(v);if(v==="browse")clearSearch();}}
+              <button key={v} onClick={()=>{setView(v);if(v==="browse")clearSearch();}} className="sb-btn"
                 title={!sidebarOpen ? label : ""}
                 style={{display:"flex",alignItems:"center",gap:"12px",padding:"11px 12px",borderRadius:"8px",border:"none",background:active?(dark?"#1a1a1a":"#f0f0f0"):"transparent",color:active?T.text:T.textMuted,fontSize:"14px",fontWeight:active?600:400,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all .15s",width:"100%",whiteSpace:"nowrap"}}>
                 <span style={{fontSize:"17px",width:"22px",textAlign:"center",flexShrink:0,lineHeight:1}}>{icon}</span>
@@ -882,18 +886,20 @@ export default function App() {
 
         {/* Bottom */}
         <div style={{padding:"8px 8px",borderTop:`1px solid ${T.border}`,display:"flex",flexDirection:"column",gap:"2px",flexShrink:0}}>
-          <button onClick={()=>{sessionStorage.removeItem("dv-entered");setShowLanding(true);}}
+          <button onClick={()=>{sessionStorage.removeItem("dv-entered");setShowLanding(true);}} className="sb-btn"
             title={!sidebarOpen?"Home":""}
             style={{display:"flex",alignItems:"center",gap:"12px",padding:"10px 12px",borderRadius:"8px",border:"none",background:"transparent",color:T.textMuted,fontSize:"14px",cursor:"pointer",fontFamily:"inherit",textAlign:"left",width:"100%",whiteSpace:"nowrap"}}>
             <span style={{fontSize:"17px",width:"22px",textAlign:"center",flexShrink:0}}>←</span>
             <span style={{opacity:sidebarOpen?1:0,transition:"opacity .15s"}}>Home</span>
           </button>
-          <button onClick={()=>setDark(d=>!d)}
-            title={!sidebarOpen?(dark?"Light mode":"Dark mode"):""}
-            style={{display:"flex",alignItems:"center",gap:"12px",padding:"10px 12px",borderRadius:"8px",border:"none",background:"transparent",color:T.textMuted,fontSize:"14px",cursor:"pointer",fontFamily:"inherit",textAlign:"left",width:"100%",whiteSpace:"nowrap"}}>
-            <span style={{fontSize:"17px",width:"22px",textAlign:"center",flexShrink:0}}>{dark?"☀️":"🌙"}</span>
-            <span style={{opacity:sidebarOpen?1:0,transition:"opacity .15s"}}>{dark?"Light":"Dark"}</span>
-          </button>
+          <div style={{display:"flex",alignItems:"center",padding:"8px 12px",gap:"10px",overflow:"hidden"}}>
+            <div onClick={()=>setDark(d=>!d)}
+              title={!sidebarOpen?(dark?"Light mode":"Dark mode"):""}
+              style={{display:"flex",width:"42px",height:"22px",padding:"2px",borderRadius:"100px",cursor:"pointer",background:dark?"#222":"#e8e8e8",border:`1px solid ${T.border}`,alignItems:"center",transition:"all .3s",flexShrink:0}}>
+              <div style={{width:"16px",height:"16px",borderRadius:"50%",background:dark?"#555":"#ccc",transform:dark?"translateX(0)":"translateX(20px)",transition:"transform .3s cubic-bezier(.34,1.56,.64,1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"9px"}}>{dark?"🌙":"☀️"}</div>
+            </div>
+            <span style={{fontSize:"13px",color:T.textMuted,opacity:sidebarOpen?1:0,transition:"opacity .15s",whiteSpace:"nowrap"}}>{dark?"Dark":"Light"}</span>
+          </div>
         </div>
       </div>
 
@@ -950,16 +956,15 @@ export default function App() {
             </h1>
             <p style={{color:T.textMuted,fontSize:"15px",marginBottom:"28px",lineHeight:1.7}}>Search any topic and find ready-to-use Proposition and Opposition arguments.</p>
             <div style={{display:"flex",gap:"10px",maxWidth:"580px",margin:"0 auto"}}>
-              <div style={{flex:1,position:"relative"}}>
-                <span style={{position:"absolute",left:"14px",top:"50%",transform:"translateY(-50%)",color:T.textMuted,fontSize:"17px",pointerEvents:"none",zIndex:1}}>⌕</span>
-                <AnimatedPlaceholder query={query} />
+              <div style={{flex:1,position:"relative",background:T.surface,border:`1px solid ${T.border}`,borderRadius:"9px",transition:"border-color .2s",display:"flex",alignItems:"center"}}>
+                <span style={{position:"absolute",left:"14px",color:T.textMuted,fontSize:"17px",pointerEvents:"none",zIndex:2,flexShrink:0}}>⌕</span>
+                <AnimatedPlaceholder query={query} dark={dark} />
                 <input value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key==="Enter" && doSearch()}
                   placeholder=""
-                  style={{width:"100%",padding:"14px 40px 14px 42px",background:T.surface,border:`1px solid ${T.border}`,borderRadius:"9px",color:T.text,fontSize:"15px",fontFamily:"inherit",transition:"border-color .2s",position:"relative",zIndex:2,background:"transparent"}} />
-                {query && <button onClick={clearSearch} style={{position:"absolute",right:"12px",top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:"22px",lineHeight:1,padding:"0 4px",zIndex:3}}>×</button>}
-                <div style={{position:"absolute",inset:0,background:T.surface,borderRadius:"9px",border:`1px solid ${T.border}`,zIndex:0,pointerEvents:"none"}} />
+                  style={{width:"100%",padding:"14px 40px 14px 44px",background:"transparent",border:"none",borderRadius:"9px",color:T.text,fontSize:"15px",fontFamily:"inherit",outline:"none",position:"relative",zIndex:4}} />
+                {query && <button onClick={clearSearch} style={{position:"absolute",right:"10px",background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontSize:"22px",lineHeight:1,padding:"0 4px",zIndex:5,flexShrink:0}}>×</button>}
               </div>
-              <button onClick={doSearch} style={{padding:"14px 24px",borderRadius:"9px",border:"none",background:dark?"#fff":"#111",color:dark?"#111":"#fff",fontSize:"14px",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",transition:"opacity .2s"}}>Search</button>
+              <button onClick={doSearch} style={{padding:"14px 24px",borderRadius:"9px",border:"none",background:dark?"#fff":"#111",color:dark?"#111":"#fff",fontSize:"14px",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",transition:"opacity .2s",flexShrink:0}}>Search</button>
             </div>
           </div>
 
