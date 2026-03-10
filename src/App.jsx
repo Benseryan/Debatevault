@@ -434,11 +434,10 @@ function ScrollStackHero({ dark, motions, onComplete, onCardClick }) {
       // Exit threshold
       if (!doneRef.current && sy > CARD_SCROLL * (stackMotions.length + 0.5)) {
         doneRef.current = true;
-        setExiting(true);
+        onComplete?.();
         setTimeout(() => {
-          onComplete?.();
           window.scrollTo({ top: 0, behavior: "instant" });
-        }, 700);
+        }, 720);
       }
       raf = requestAnimationFrame(tick);
     };
@@ -590,13 +589,7 @@ function ScrollStackHero({ dark, motions, onComplete, onCardClick }) {
         </div>
       </div>
 
-      {/* Exit wipe overlay */}
-      {exiting && (
-        <div style={{ position:"fixed", inset:0, zIndex:999,
-          background: dark?"#0a0a0a":"#fafafa",
-          animation:"hero-wipe-in .65s cubic-bezier(.76,0,.24,1) both",
-          pointerEvents:"none" }} />
-      )}
+
     </div>
   );
 }
@@ -664,6 +657,7 @@ export default function App() {
   const [showCinematic, setShowCinematic] = React.useState(false);
   const [cinematicPhase, setCinematicPhase] = React.useState(0);
   const [fromLanding, setFromLanding] = React.useState(false);
+  const [landingTransition, setLandingTransition] = React.useState(false);
   const [intro, setIntro] = useState(true);
   const [introPhase, setIntroPhase] = useState(0); // 0=logo, 1=tagline, 2=zoom out, 3=done
   const T = dark ? DARK : LIGHT;
@@ -1388,6 +1382,16 @@ export default function App() {
         />
       )}
 
+      {/* ── Landing→Browse transition wipe — lives at app level so it survives unmounts ── */}
+      {landingTransition && (
+        <div style={{
+          position:"fixed", inset:0, zIndex:800,
+          background: dark?"#0a0a0a":"#fafafa",
+          animation:"hero-wipe-in .65s cubic-bezier(.76,0,.24,1) both",
+          pointerEvents:"none",
+        }} />
+      )}
+
       {toast && (
         <div style={{position:"fixed",bottom:"24px",left:"50%",transform:"translateX(-50%)",background:T.surface,border:`1px solid ${toast.isError?"#dc262655":T.border}`,borderRadius:"8px",padding:"11px 22px",fontSize:"13px",color:toast.isError?"#dc2626":T.text,zIndex:999,boxShadow:"0 4px 24px rgba(0,0,0,.15)",whiteSpace:"nowrap",fontWeight:500}}>
           {toast.msg}
@@ -1540,7 +1544,7 @@ export default function App() {
             <ScrollStackHero
               dark={dark}
               motions={motions}
-              onComplete={() => { setFromLanding(false); }}
+              onComplete={() => { setLandingTransition(true); setTimeout(() => { setFromLanding(false); setLandingTransition(false); }, 700); }}
               onCardClick={(m) => openMotion(m)}
             />
           )}
@@ -1563,7 +1567,7 @@ export default function App() {
               ? "radial-gradient(ellipse 100% 55% at 50% 0%, transparent 30%, #0a0a0a 100%)"
               : "radial-gradient(ellipse 100% 55% at 50% 0%, transparent 30%, #fafafa 100%)",
           }} />
-          <div style={{maxWidth:"680px",margin:"0 auto",padding:mobile?"72px 16px 24px":"72px 24px 32px",textAlign:"center",position:"relative",zIndex:1}}>
+          <div style={{maxWidth:"680px",margin:"0 auto",padding:mobile?"72px 16px 24px":"72px 24px 32px",textAlign:"center",position:"relative",zIndex:1,animation:"browse-fade-in .7s cubic-bezier(.22,1,.36,1) both"}}>
             <p style={{fontSize:"11px",fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.textMuted,marginBottom:"14px",animation:"browse-fade-in .5s cubic-bezier(.22,1,.36,1) .05s both"}}>WSDC Argument Database</p>
             <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,5vw,48px)",fontWeight:900,lineHeight:1.1,marginBottom:"10px",color:T.text,letterSpacing:"-1px",animation:"browse-fade-in .6s cubic-bezier(.22,1,.36,1) .12s both"}}>
               Every argument.<br/><span style={{fontStyle:"italic",color:T.textMuted}}>Every motion.</span>
