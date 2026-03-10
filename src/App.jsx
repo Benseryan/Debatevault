@@ -315,25 +315,18 @@ function TiltedHeroCard({ dark }) {
 }
 
 function CinematicEntry({ phase, dark, onExplore }) {
-  const firedRef = React.useRef(false);
-  const handleExplore = React.useCallback(() => {
-    if (firedRef.current) return;
-    firedRef.current = true;
-    onExplore?.();
-  }, [onExplore]);
+  const handleExplore = onExplore;
   return (
     <div
       style={{
         position:"fixed", inset:0, zIndex:9000,
         fontFamily:"'DM Sans',sans-serif",
         background:"#0a0a0a",
-        animation: phase===3
-          ? "hero-wipe-out .65s cubic-bezier(.76,0,.24,1) both"
-          : "hero-wipe-in .7s cubic-bezier(.76,0,.24,1) both",
+        animation:"hero-wipe-in .7s cubic-bezier(.76,0,.24,1) both",
         overflow:"hidden",
         display:"flex",
       }}
-      onWheel={phase !== 3 ? handleExplore : undefined}
+      onWheel={handleExplore}
     >
       {/* Left text column */}
       <div style={{
@@ -1263,14 +1256,11 @@ export default function App() {
             phase={cinematicPhase}
             dark={dark}
             onExplore={() => {
-              setCinematicPhase(3);
-              setTimeout(() => {
-                setShowCinematic(false);
-                setCinematicPhase(0);
-                setShowLanding(false);
-                setFromLanding(true);
-                window.scrollTo({ top: 0, behavior: "instant" });
-              }, 680);
+              setShowCinematic(false);
+              setCinematicPhase(0);
+              setShowLanding(false);
+              setFromLanding(true);
+              window.scrollTo({ top: 0, behavior: "instant" });
             }}
           />
         </div>
@@ -1371,13 +1361,11 @@ export default function App() {
           phase={cinematicPhase}
           dark={dark}
           onExplore={() => {
-            setCinematicPhase(3);
-            setTimeout(() => {
-              setShowCinematic(false);
-              setCinematicPhase(0);
-              setFromLanding(true);
-              window.scrollTo({ top: 0, behavior: "instant" });
-            }, 680);
+            setShowCinematic(false);
+            setCinematicPhase(0);
+            setShowLanding(false);
+            setFromLanding(true);
+            window.scrollTo({ top: 0, behavior: "instant" });
           }}
         />
       )}
