@@ -1204,22 +1204,24 @@ export default function App() {
           setShowLanding(false);
         }}
       />
-      {showCinematic && cinematicPhase > 0 && (
-        <CinematicEntry
-          phase={cinematicPhase}
-          dark={dark}
-          onExplore={() => {
-            setCinematicPhase(3);
-            setTimeout(() => {
-              setShowCinematic(false);
-              setCinematicPhase(0);
-              setFromLanding(true);
-              window.scrollTo({ top: 0, behavior: "instant" });
-            }, 680);
-          }}
-        />
-      )}
     </>
+  );
+
+  // CINEMATIC OVERLAY — rendered at top level so it persists after showLanding=false
+  if (showCinematic && cinematicPhase > 0) return (
+    <CinematicEntry
+      phase={cinematicPhase}
+      dark={dark}
+      onExplore={() => {
+        setCinematicPhase(3);
+        setTimeout(() => {
+          setShowCinematic(false);
+          setCinematicPhase(0);
+          setFromLanding(true);
+          window.scrollTo({ top: 0, behavior: "instant" });
+        }, 680);
+      }}
+    />
   );
 
   // INTRO SCREEN — v2 clean
