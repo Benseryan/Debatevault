@@ -402,6 +402,9 @@ export default function App() {
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   const [mobile, setMobile] = React.useState(isMobile);
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const [menuClosing, setMenuClosing] = React.useState(false);
+  const closeMenu = React.useCallback(() => { setMenuClosing(true); setTimeout(()=>{setMenuOpen(false);setMenuClosing(false);},320); }, []);
 
   React.useEffect(() => {
     const handler = () => setMobile(window.innerWidth < 768);
@@ -420,16 +423,25 @@ export default function App() {
     input:focus,select:focus,textarea:focus{outline:none;border-color:#0284c7!important;box-shadow:0 0 0 3px rgba(2,132,199,.12);}
     ::placeholder{color:#888;}
     @media(max-width:768px){
-      .sidebar{display:none!important;}
-      .main-content{margin-left:0!important;padding-bottom:72px;}
+      .main-content{padding-bottom:72px;}
     }
-    .sidebar{overflow:hidden;}
     .sb-btn{position:relative;overflow:hidden;}
     .sb-btn::after{content:'';position:absolute;inset:0;background:currentColor;opacity:0;border-radius:8px;transition:opacity .15s ease;}
     .sb-btn:hover::after{opacity:0.06;}
     .sb-btn:active::after{opacity:0.12;}
     @keyframes ripple-anim{to{transform:scale(4);opacity:0;}}
     @keyframes cursor-blink{0%,100%{opacity:1;}50%{opacity:0;}}
+    @keyframes sm-overlay-in{from{clip-path:inset(0 0 100% 0);}to{clip-path:inset(0 0 0% 0);}}
+    @keyframes sm-overlay-out{from{clip-path:inset(0 0 0% 0);}to{clip-path:inset(0 0 100% 0);}}
+    @keyframes sm-item-in{from{opacity:0;transform:translateY(32px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes sm-item-out{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-20px);}}
+    @keyframes sm-line-in{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+    .sm-item{animation:sm-item-in .45s cubic-bezier(.22,1,.36,1) both;}
+    .sm-item-out{animation:sm-item-out .25s cubic-bezier(.4,0,1,1) both;}
+    .sm-burger span{display:block;width:22px;height:2px;border-radius:2px;transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .2s,width .3s;}
+    .sm-burger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+    .sm-burger.open span:nth-child(2){opacity:0;width:0;}
+    .sm-burger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
     .ripple-btn{position:relative;overflow:hidden;cursor:pointer;}
     .ripple-btn .ripple{position:absolute;border-radius:50%;transform:scale(0);animation:ripple-anim .55s linear;background:rgba(255,255,255,0.25);pointer-events:none;}
     @media(min-width:769px){
@@ -899,72 +911,102 @@ export default function App() {
         </div>
       )}
 
-      {/* SIDEBAR — collapsible on hover */}
-      <div className="sidebar"
-        onMouseEnter={()=>setSidebarOpen(true)}
-        onMouseLeave={()=>setSidebarOpen(false)}
-        style={{
-          width: sidebarOpen ? "210px" : "56px",
-          minHeight:"100vh", background:T.surface,
-          borderRight:`1px solid ${T.border}`,
-          display:"flex", flexDirection:"column",
-          position:"fixed", top:0, left:0, zIndex:99,
-          fontFamily:"'DM Sans',sans-serif",
-          transition:"width .25s cubic-bezier(.4,0,.2,1)",
-          overflow:"hidden",
-        }}>
-        {/* Logo */}
-        <div onClick={()=>{setView("browse");clearSearch();}}
-          style={{padding:"16px 14px",cursor:"pointer",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:"10px",minHeight:"56px",flexShrink:0}}>
-          <div style={{width:"30px",height:"30px",borderRadius:"7px",background:dark?"#1a1a1a":"#111",border:`1px solid ${dark?"#333":"#222"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"15px",flexShrink:0}}>⚖</div>
-          <div style={{overflow:"hidden",whiteSpace:"nowrap",opacity:sidebarOpen?1:0,transition:"opacity .2s",minWidth:0}}>
-            <div style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"17px",color:T.text,lineHeight:1.2}}>DebateVault</div>
-            <div style={{fontSize:"11px",color:T.textMuted,letterSpacing:".04em"}}>{motions.length} motions</div>
-          </div>
-        </div>
+      {/* ── STAGGERED MENU ── */}
 
-        {/* Nav */}
-        <nav style={{padding:"8px 8px",flex:1,display:"flex",flexDirection:"column",gap:"2px"}}>
-          {[
-            ["browse","🗂","Browse"],
-            ["timer","⏱","Prep Timer"],
-            ["news","📰","News"],
-            ["chain","🔗","Logic Chain"],
-            ["admin","⚙","Admin"],
-          ].map(([v,icon,label]) => {
-            const active = view===v||(view==="detail"&&v==="browse");
-            return (
-              <button key={v} onClick={()=>{setView(v);if(v==="browse")clearSearch();}} className="sb-btn"
-                title={!sidebarOpen ? label : ""}
-                style={{display:"flex",alignItems:"center",gap:"12px",padding:"11px 12px",borderRadius:"8px",border:"none",background:active?(dark?"#1a1a1a":"#f0f0f0"):"transparent",color:active?T.text:T.textMuted,fontSize:"14px",fontWeight:active?600:400,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all .15s",width:"100%",whiteSpace:"nowrap"}}>
-                <span style={{fontSize:"17px",width:"22px",textAlign:"center",flexShrink:0,lineHeight:1}}>{icon}</span>
-                <span style={{opacity:sidebarOpen?1:0,transition:"opacity .15s",overflow:"hidden"}}>{label}</span>
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Bottom */}
-        <div style={{padding:"8px 8px",borderTop:`1px solid ${T.border}`,display:"flex",flexDirection:"column",gap:"2px",flexShrink:0}}>
-          <button onClick={()=>{sessionStorage.removeItem("dv-entered");setShowLanding(true);}} className="sb-btn"
-            title={!sidebarOpen?"Home":""}
-            style={{display:"flex",alignItems:"center",gap:"12px",padding:"10px 12px",borderRadius:"8px",border:"none",background:"transparent",color:T.textMuted,fontSize:"14px",cursor:"pointer",fontFamily:"inherit",textAlign:"left",width:"100%",whiteSpace:"nowrap"}}>
-            <span style={{fontSize:"17px",width:"22px",textAlign:"center",flexShrink:0}}>←</span>
-            <span style={{opacity:sidebarOpen?1:0,transition:"opacity .15s"}}>Home</span>
-          </button>
-          <div style={{display:"flex",alignItems:"center",padding:"8px 12px",gap:"10px",overflow:"hidden"}}>
-            <div onClick={()=>setDark(d=>!d)}
-              title={!sidebarOpen?(dark?"Light mode":"Dark mode"):""}
-              style={{display:"flex",width:"42px",height:"22px",padding:"2px",borderRadius:"100px",cursor:"pointer",background:dark?"#222":"#e8e8e8",border:`1px solid ${T.border}`,alignItems:"center",transition:"all .3s",flexShrink:0}}>
-              <div style={{width:"16px",height:"16px",borderRadius:"50%",background:dark?"#555":"#ccc",transform:dark?"translateX(0)":"translateX(20px)",transition:"transform .3s cubic-bezier(.34,1.56,.64,1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"9px"}}>{dark?"🌙":"☀️"}</div>
-            </div>
-            <span style={{fontSize:"13px",color:T.textMuted,opacity:sidebarOpen?1:0,transition:"opacity .15s",whiteSpace:"nowrap"}}>{dark?"Dark":"Light"}</span>
+      {/* Hamburger button — always visible top-left */}
+      <div style={{position:"fixed",top:0,left:0,zIndex:200,padding:"14px 16px",display:"flex",alignItems:"center",gap:"12px",fontFamily:"'DM Sans',sans-serif"}}>
+        <button
+          className={`sm-burger${menuOpen?" open":""}`}
+          onClick={()=>menuOpen?closeMenu():setMenuOpen(true)}
+          style={{background:"none",border:"none",cursor:"pointer",padding:"6px",display:"flex",flexDirection:"column",gap:"5px",alignItems:"flex-start",zIndex:201,flexShrink:0}}
+          aria-label="Toggle menu">
+          <span style={{background:menuOpen?"#fff":T.text}} />
+          <span style={{background:menuOpen?"#fff":T.text}} />
+          <span style={{background:menuOpen?"#fff":T.text,width:"14px"}} />
+        </button>
+        {!menuOpen && (
+          <div onClick={()=>{setView("browse");clearSearch();}} style={{cursor:"pointer",display:"flex",alignItems:"center",gap:"8px"}}>
+            <span style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:"16px",color:T.text}}>DebateVault</span>
           </div>
-        </div>
+        )}
       </div>
 
+      {/* Full-screen overlay menu */}
+      {(menuOpen || menuClosing) && (
+        <div style={{
+          position:"fixed",inset:0,zIndex:199,
+          background:dark?"#0d0d0d":"#111",
+          display:"flex",flexDirection:"column",
+          animation: menuClosing ? "sm-overlay-out .32s cubic-bezier(.4,0,1,1) both" : "sm-overlay-in .45s cubic-bezier(.22,1,.36,1) both",
+          fontFamily:"'DM Sans',sans-serif",
+          overflow:"hidden",
+        }}>
+          {/* Top bar inside overlay */}
+          <div style={{padding:"14px 16px 0",display:"flex",alignItems:"center",gap:"12px"}}>
+            <div style={{width:"8px",height:"8px",borderRadius:"50%",background:"#fff",opacity:0.3}} />
+            <span style={{fontFamily:"'Playfair Display',serif",fontSize:"14px",color:"rgba(255,255,255,0.4)",letterSpacing:".08em"}}>DEBATEVAULT</span>
+          </div>
+
+          {/* Main nav items */}
+          <nav style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",padding:"0 48px 0 52px"}}>
+            {[
+              ["browse","Browse",       "01"],
+              ["timer", "Prep Timer",   "02"],
+              ["news",  "News",         "03"],
+              ["chain", "Logic Chain",  "04"],
+              ["admin", "Admin",        "05"],
+            ].map(([v, label, num], i) => {
+              const active = view===v||(view==="detail"&&v==="browse");
+              return (
+                <div key={v}
+                  className={menuClosing?"sm-item-out":"sm-item"}
+                  style={{animationDelay: menuClosing ? `${i*0.04}s` : `${0.08+i*0.07}s`, borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+                  <button
+                    onClick={()=>{setView(v);if(v==="browse")clearSearch();closeMenu();}}
+                    style={{
+                      width:"100%",background:"none",border:"none",cursor:"pointer",
+                      display:"flex",alignItems:"center",gap:"20px",
+                      padding:"20px 0",
+                      textAlign:"left",fontFamily:"inherit",
+                    }}>
+                    <span style={{fontSize:"11px",color:"rgba(255,255,255,0.25)",fontWeight:600,letterSpacing:".1em",width:"22px",flexShrink:0}}>{num}</span>
+                    <span style={{
+                      fontFamily:"'Playfair Display',serif",
+                      fontSize:"clamp(26px,5vw,48px)",
+                      fontWeight:700,
+                      letterSpacing:"-1px",
+                      lineHeight:1,
+                      color: active ? "#fff" : "rgba(255,255,255,0.45)",
+                      transition:"color .15s",
+                    }}>{label}</span>
+                    {active && <span style={{marginLeft:"auto",fontSize:"11px",color:"rgba(255,255,255,0.3)",letterSpacing:".08em",textTransform:"uppercase"}}>current</span>}
+                  </button>
+                </div>
+              );
+            })}
+          </nav>
+
+          {/* Bottom strip */}
+          <div style={{padding:"24px 52px",display:"flex",alignItems:"center",justifyContent:"space-between",borderTop:"1px solid rgba(255,255,255,0.07)"}}>
+            <div style={{display:"flex",gap:"24px"}}>
+              <button onClick={()=>{sessionStorage.removeItem("dv-entered");setShowLanding(true);closeMenu();}}
+                style={{background:"none",border:"none",cursor:"pointer",fontSize:"13px",color:"rgba(255,255,255,0.4)",fontFamily:"inherit",padding:0,letterSpacing:".04em"}}>
+                ← Home
+              </button>
+              <span style={{fontSize:"13px",color:"rgba(255,255,255,0.2)"}}>·</span>
+              <span style={{fontSize:"13px",color:"rgba(255,255,255,0.3)",letterSpacing:".04em"}}>{motions.length} motions</span>
+            </div>
+            {/* Dark/light pill */}
+            <div onClick={()=>setDark(d=>!d)}
+              style={{display:"flex",width:"44px",height:"24px",padding:"2px",borderRadius:"100px",cursor:"pointer",background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.15)",alignItems:"center",transition:"all .3s"}}>
+              <div style={{width:"18px",height:"18px",borderRadius:"50%",background:"rgba(255,255,255,0.25)",transform:dark?"translateX(0)":"translateX(20px)",transition:"transform .3s cubic-bezier(.34,1.56,.64,1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"10px"}}>{dark?"🌙":"☀️"}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MAIN CONTENT */}
-      <div className="main-content" style={{marginLeft:"56px",flex:1,minWidth:0,transition:"margin-left .25s cubic-bezier(.4,0,.2,1)"}}>
+      <div className="main-content" style={{marginLeft:"0",flex:1,minWidth:0}}>
 
       {/* MOBILE TOP BAR */}
       {mobile && (
@@ -1024,7 +1066,7 @@ export default function App() {
               ? "radial-gradient(ellipse 100% 55% at 50% 0%, transparent 30%, #0a0a0a 100%)"
               : "radial-gradient(ellipse 100% 55% at 50% 0%, transparent 30%, #fafafa 100%)",
           }} />
-          <div style={{maxWidth:"680px",margin:"0 auto",padding:mobile?"72px 16px 24px":"48px 24px 32px",textAlign:"center",position:"relative",zIndex:1}}>
+          <div style={{maxWidth:"680px",margin:"0 auto",padding:mobile?"80px 16px 24px":"72px 24px 32px",textAlign:"center",position:"relative",zIndex:1}}>
             <p style={{fontSize:"11px",fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.textMuted,marginBottom:"14px"}}>WSDC Argument Database</p>
             <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,5vw,48px)",fontWeight:900,lineHeight:1.1,marginBottom:"10px",color:T.text,letterSpacing:"-1px"}}>
               Every argument.<br/><span style={{fontStyle:"italic",color:T.textMuted}}>Every motion.</span>
