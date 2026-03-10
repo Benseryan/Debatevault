@@ -120,6 +120,62 @@ const LIGHT = {
 
 const EMPTY_FORM = {motion:"",theme:"Economics",subtheme:"",keywords:"",tournament:"",difficulty:"Medium",propArgs:[{name:"",summary:"",type:"Practical"}],oppArgs:[{name:"",summary:"",type:"Practical"}]};
 
+// ── Ripple effect helper ─────────────────────────────────────────────────────
+function addRipple(e) {
+  const btn = e.currentTarget;
+  const circle = document.createElement("span");
+  const diameter = Math.max(btn.clientWidth, btn.clientHeight);
+  const radius = diameter / 2;
+  const rect = btn.getBoundingClientRect();
+  circle.style.width = circle.style.height = diameter + "px";
+  circle.style.left = (e.clientX - rect.left - radius) + "px";
+  circle.style.top  = (e.clientY - rect.top  - radius) + "px";
+  circle.className = "ripple";
+  btn.querySelector(".ripple")?.remove();
+  btn.appendChild(circle);
+}
+
+// ── MessageLoading dots ───────────────────────────────────────────────────────
+function MessageLoading() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style={{display:"block"}}>
+      <circle cx="4" cy="12" r="2" fill="currentColor">
+        <animate id="spinner_qFRN" begin="0;spinner_OcgL.end+0.25s" attributeName="cy" calcMode="spline" dur="0.6s" values="12;6;12" keySplines=".33,.66,.66,1;.33,0,.66,.33"/>
+      </circle>
+      <circle cx="12" cy="12" r="2" fill="currentColor">
+        <animate begin="spinner_qFRN.begin+0.1s" attributeName="cy" calcMode="spline" dur="0.6s" values="12;6;12" keySplines=".33,.66,.66,1;.33,0,.66,.33"/>
+      </circle>
+      <circle cx="20" cy="12" r="2" fill="currentColor">
+        <animate id="spinner_OcgL" begin="spinner_qFRN.begin+0.2s" attributeName="cy" calcMode="spline" dur="0.6s" values="12;6;12" keySplines=".33,.66,.66,1;.33,0,.66,.33"/>
+      </circle>
+    </svg>
+  );
+}
+
+// ── Cinematic typewriter for stress test results ────────────────────────────
+function TypewriterText({ text, speed = 18, style }) {
+  const [displayed, setDisplayed] = React.useState("");
+  const [done, setDone] = React.useState(false);
+  React.useEffect(() => {
+    setDisplayed("");
+    setDone(false);
+    if (!text) return;
+    let i = 0;
+    const tick = setInterval(() => {
+      i++;
+      setDisplayed(text.slice(0, i));
+      if (i >= text.length) { clearInterval(tick); setDone(true); }
+    }, speed);
+    return () => clearInterval(tick);
+  }, [text, speed]);
+  return (
+    <span style={style}>
+      {displayed}
+      {!done && <span style={{display:"inline-block",width:"2px",height:"1em",background:"currentColor",verticalAlign:"text-bottom",marginLeft:"1px",animation:"cursor-blink .7s steps(1) infinite"}} />}
+    </span>
+  );
+}
+
 // ── Animated cycling placeholder ─────────────────────────────────────────────
 const SEARCH_EXAMPLES = [
   "social media and democracy",
@@ -372,6 +428,10 @@ export default function App() {
     .sb-btn::after{content:'';position:absolute;inset:0;background:currentColor;opacity:0;border-radius:8px;transition:opacity .15s ease;}
     .sb-btn:hover::after{opacity:0.06;}
     .sb-btn:active::after{opacity:0.12;}
+    @keyframes ripple-anim{to{transform:scale(4);opacity:0;}}
+    @keyframes cursor-blink{0%,100%{opacity:1;}50%{opacity:0;}}
+    .ripple-btn{position:relative;overflow:hidden;cursor:pointer;}
+    .ripple-btn .ripple{position:absolute;border-radius:50%;transform:scale(0);animation:ripple-anim .55s linear;background:rgba(255,255,255,0.25);pointer-events:none;}
     @media(min-width:769px){
       .bottom-tab-bar{display:none!important;}
     }
@@ -948,8 +1008,10 @@ export default function App() {
 
       {/* BROWSE */}
       {view === "browse" && (
-        <div>
-          <div style={{maxWidth:"680px",margin:"0 auto",padding:mobile?"72px 16px 24px":"48px 24px 32px",textAlign:"center"}}>
+        <div style={{position:"relative"}}>
+          {/* Dot grid background */}
+          <div style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",backgroundImage:`radial-gradient(circle, ${dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.09)"} 1px, transparent 1px)`,backgroundSize:"28px 28px",maskImage:"radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%)",WebkitMaskImage:"radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%)"}} />
+          <div style={{maxWidth:"680px",margin:"0 auto",padding:mobile?"72px 16px 24px":"48px 24px 32px",textAlign:"center",position:"relative",zIndex:1}}>
             <p style={{fontSize:"11px",fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.textMuted,marginBottom:"14px"}}>WSDC Argument Database</p>
             <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,5vw,48px)",fontWeight:900,lineHeight:1.1,marginBottom:"10px",color:T.text,letterSpacing:"-1px"}}>
               Every argument.<br/><span style={{fontStyle:"italic",color:T.textMuted}}>Every motion.</span>
@@ -969,7 +1031,7 @@ export default function App() {
           </div>
 
           {!searched && (
-            <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 16px",display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center"}}>
+            <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 16px",position:"relative",zIndex:1,display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center"}}>
               <select value={filterTheme} onChange={e => { setFilterTheme(e.target.value); setFilterSubtheme("All"); }} style={{padding:"6px 12px",background:T.surface,border:`1px solid ${T.border}`,borderRadius:"6px",color:T.text,fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>
                 {THEMES.map(t => <option key={t}>{t}</option>)}
               </select>
@@ -986,7 +1048,7 @@ export default function App() {
           )}
 
           {searched && (
-            <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 14px",position:"relative",zIndex:1,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <p style={{fontSize:"13px",color:T.textMuted}}>
                 {results.length > 0 ? <><span style={{color:T.text,fontWeight:600}}>{results.length} result{results.length!==1?"s":""}</span> for &ldquo;{query}&rdquo;</> : <span>No results for &ldquo;<b style={{color:T.text}}>{query}</b>&rdquo;</span>}
               </p>
@@ -994,7 +1056,7 @@ export default function App() {
             </div>
           )}
 
-          <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 60px",display:"grid",gridTemplateColumns:mobile?"1fr":"repeat(auto-fill,minmax(280px,1fr))",gap:"10px"}}>
+          <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 60px",position:"relative",zIndex:1,display:"grid",gridTemplateColumns:mobile?"1fr":"repeat(auto-fill,minmax(280px,1fr))",gap:"10px"}}>
             {displayed.map(m => (
               <div key={m.id} className="card" onClick={() => openMotion(m)} style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:"10px",padding:"20px",boxShadow:"none"}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:"10px",alignItems:"flex-start",gap:"6px"}}>
@@ -1196,8 +1258,8 @@ export default function App() {
               style={{...INP}} />
             <div style={{display:"flex",gap:"6px"}}>
               {["Proposition","Opposition"].map(s => (
-                <button key={s} onClick={() => setChainSide(s)}
-                  style={{padding:"9px 14px",borderRadius:"7px",border:`1px solid ${chainSide===s?(s==="Proposition"?T.propBorder:T.oppBorder):T.border}`,background:chainSide===s?(s==="Proposition"?T.propBg:T.oppBg):"transparent",color:chainSide===s?(s==="Proposition"?T.prop:T.opp):T.textMuted,fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>
+                <button key={s} onClick={(e)=>{addRipple(e);setChainSide(s);}} className="ripple-btn"
+                  style={{padding:"10px 18px",borderRadius:"8px",border:`1px solid ${chainSide===s?(s==="Proposition"?T.propBorder:T.oppBorder):T.border}`,background:chainSide===s?(s==="Proposition"?T.propBg:T.oppBg):"transparent",color:chainSide===s?(s==="Proposition"?T.prop:T.opp):T.textMuted,fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",transition:"all .15s"}}>
                   {s === "Proposition" ? "Prop" : "Opp"}
                 </button>
               ))}
@@ -1269,16 +1331,26 @@ export default function App() {
             ))}
           </div>
 
-          {/* Action buttons */}
-          <div style={{display:"flex",gap:"10px",marginBottom:"28px"}}>
-            <button onClick={runStressTest} disabled={stressTesting}
-              style={{flex:1,padding:"12px",borderRadius:"8px",border:"none",background:dark?"#fff":"#111",color:dark?"#111":"#fff",fontSize:"14px",fontWeight:700,cursor:"pointer",fontFamily:"inherit",opacity:stressTesting?0.6:1}}>
-              {stressTesting ? "Stress testing..." : "⚡ Stress Test this Chain"}
-            </button>
-            <button onClick={() => { setChainBlocks([{type:"Claim",text:""}]); setStressResult(null); setChainMotion(""); }}
-              style={{padding:"12px 18px",borderRadius:"8px",border:`1px solid ${T.border}`,background:"transparent",color:T.textMuted,fontSize:"13px",cursor:"pointer",fontFamily:"inherit"}}>
-              Reset
-            </button>
+          {/* AI Chat Prompt Bar */}
+          <div style={{marginBottom:"28px",background:T.surface,border:`1px solid ${T.border}`,borderRadius:"14px",padding:"14px 16px",boxShadow:dark?"0 4px 24px rgba(0,0,0,.4)":"0 4px 24px rgba(0,0,0,.08)",transition:"box-shadow .2s"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
+              <div style={{width:"28px",height:"28px",borderRadius:"8px",background:dark?"#1a1a1a":"#f4f4f4",border:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px",flexShrink:0}}>⚡</div>
+              <span style={{fontSize:"13px",fontWeight:600,color:T.text}}>AI Stress Test</span>
+              <span style={{fontSize:"11px",color:T.textMuted,marginLeft:"auto"}}>Groq · llama-3.3-70b</span>
+            </div>
+            <div style={{fontSize:"13px",color:T.textMuted,marginBottom:"12px",lineHeight:1.5}}>
+              AI will find the weakest link, craft an opponent attack, and suggest how to fix it.
+            </div>
+            <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
+              <button onClick={(e)=>{addRipple(e);runStressTest();}} disabled={stressTesting} className="ripple-btn"
+                style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:"8px",padding:"11px 18px",borderRadius:"10px",border:"none",background:dark?"#fff":"#111",color:dark?"#111":"#fff",fontSize:"14px",fontWeight:700,cursor:stressTesting?"not-allowed":"pointer",fontFamily:"inherit",opacity:stressTesting?0.7:1,transition:"opacity .2s"}}>
+                {stressTesting ? <><MessageLoading /><span>Stress testing…</span></> : <span>⚡ Run Stress Test</span>}
+              </button>
+              <button onClick={(e)=>{addRipple(e);setChainBlocks([{type:"Claim",text:""}]);setStressResult(null);setChainMotion("");}} className="ripple-btn"
+                style={{padding:"11px 16px",borderRadius:"10px",border:`1px solid ${T.border}`,background:"transparent",color:T.textMuted,fontSize:"13px",cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>
+                Reset
+              </button>
+            </div>
           </div>
 
           {/* Stress test result */}
@@ -1288,15 +1360,15 @@ export default function App() {
               <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
                 <div>
                   <p style={{fontSize:"11px",color:T.textMuted,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",marginBottom:"4px"}}>Verdict</p>
-                  <p style={{fontSize:"15px",fontWeight:600,color:T.text,lineHeight:1.5}}>{stressResult.verdict}</p>
+                  <TypewriterText text={stressResult.verdict} style={{fontSize:"15px",fontWeight:600,color:T.text,lineHeight:1.5}} />
                 </div>
                 <div style={{background:T.oppBg,border:`1px solid ${T.oppBorder}`,borderRadius:"8px",padding:"14px"}}>
                   <p style={{fontSize:"10px",color:T.opp,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",marginBottom:"6px"}}>How an opponent attacks it</p>
-                  <p style={{fontSize:"14px",color:T.textSub,lineHeight:1.7,fontStyle:"italic"}}>"{stressResult.attack}"</p>
+                  <p style={{fontSize:"14px",color:T.textSub,lineHeight:1.7,fontStyle:"italic"}}>"<TypewriterText text={stressResult.attack} speed={14} style={{}} />"</p>
                 </div>
                 <div style={{background:T.propBg,border:`1px solid ${T.propBorder}`,borderRadius:"8px",padding:"14px"}}>
                   <p style={{fontSize:"10px",color:T.prop,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",marginBottom:"6px"}}>How to strengthen it</p>
-                  <p style={{fontSize:"14px",color:T.textSub,lineHeight:1.7}}>{stressResult.fix}</p>
+                  <TypewriterText text={stressResult.fix} speed={16} style={{fontSize:"14px",color:T.textSub,lineHeight:1.7,display:"block"}} />
                 </div>
               </div>
             </div>
@@ -1317,8 +1389,8 @@ export default function App() {
                 <label style={{display:"block",fontSize:"11px",color:T.textMuted,fontWeight:600,textTransform:"uppercase",letterSpacing:".06em",marginBottom:"8px"}}>Format</label>
                 <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
                   {Object.keys(FORMATS).map(f => (
-                    <button key={f} onClick={() => setTimerFormat(f)}
-                      style={{padding:"8px 16px",borderRadius:"7px",border:`1px solid ${timerFormat===f?(dark?"#e0e0e0":"#111"):T.border}`,background:timerFormat===f?(dark?"#fff":"#111"):"transparent",color:timerFormat===f?(dark?"#111":"#fff"):T.textMuted,fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+                    <button key={f} onClick={(e)=>{addRipple(e);setTimerFormat(f);}} className="ripple-btn"
+                      style={{padding:"9px 18px",borderRadius:"8px",border:`1px solid ${timerFormat===f?(dark?"#e0e0e0":"#111"):T.border}`,background:timerFormat===f?(dark?"#fff":"#111"):"transparent",color:timerFormat===f?(dark?"#111":"#fff"):T.textMuted,fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>
                       {f === "WSDC" ? "WSDC (30 min)" : f === "CNDF" ? "CNDF (15 min)" : f === "BP" ? "BP (15 min)" : "Custom"}
                     </button>
                   ))}
@@ -1339,8 +1411,8 @@ export default function App() {
                 <label style={{display:"block",fontSize:"11px",color:T.textMuted,fontWeight:600,textTransform:"uppercase",letterSpacing:".06em",marginBottom:"8px"}}>Side (optional)</label>
                 <div style={{display:"flex",gap:"8px"}}>
                   {["Proposition","Opposition",""].map((s,i) => (
-                    <button key={i} onClick={() => setTimerSide(s)}
-                      style={{padding:"8px 16px",borderRadius:"7px",border:`1px solid ${timerSide===s?(s==="Proposition"?T.propBorder:s==="Opposition"?T.oppBorder:T.border):T.border}`,background:timerSide===s?(s==="Proposition"?T.propBg:s==="Opposition"?T.oppBg:T.surface2):"transparent",color:timerSide===s?(s==="Proposition"?T.prop:s==="Opposition"?T.opp:T.text):T.textMuted,fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+                    <button key={i} onClick={(e)=>{addRipple(e);setTimerSide(s);}} className="ripple-btn"
+                      style={{padding:"9px 18px",borderRadius:"8px",border:`1px solid ${timerSide===s?(s==="Proposition"?T.propBorder:s==="Opposition"?T.oppBorder:T.border):T.border}`,background:timerSide===s?(s==="Proposition"?T.propBg:s==="Opposition"?T.oppBg:T.surface2):"transparent",color:timerSide===s?(s==="Proposition"?T.prop:s==="Opposition"?T.opp:T.text):T.textMuted,fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>
                       {s || "No side"}
                     </button>
                   ))}
