@@ -176,6 +176,91 @@ function TypewriterText({ text, speed = 18, style }) {
   );
 }
 
+// ── Cinematic entry transition ────────────────────────────────────────────────
+const DEBATE_IMAGES = [
+  { url:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1600&auto=format&fit=crop&q=80", caption:"WSDC World Championships" },
+  { url:"https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=1600&auto=format&fit=crop&q=80", caption:"Championship Round" },
+  { url:"https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1600&auto=format&fit=crop&q=80", caption:"Debate Preparation" },
+];
+
+function CinematicEntry({ phase, dark }) {
+  const [imgIdx] = React.useState(() => Math.floor(Math.random() * DEBATE_IMAGES.length));
+  const img = DEBATE_IMAGES[imgIdx];
+
+  return (
+    <div style={{
+      position:"fixed", inset:0, zIndex:9000,
+      fontFamily:"'DM Sans',sans-serif",
+      animation: phase===3
+        ? "hero-wipe-out .65s cubic-bezier(.76,0,.24,1) both"
+        : "hero-wipe-in .7s cubic-bezier(.76,0,.24,1) both",
+      overflow:"hidden",
+    }}>
+      {/* Background image with zoom */}
+      <div style={{
+        position:"absolute", inset:0,
+        backgroundImage:`url(${img.url})`,
+        backgroundSize:"cover", backgroundPosition:"center",
+        animation:"hero-img-zoom 4s ease-out both",
+      }} />
+      {/* Dark overlay */}
+      <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.65) 100%)"}} />
+
+      {/* Content */}
+      <div style={{
+        position:"absolute", inset:0,
+        display:"flex", flexDirection:"column",
+        justifyContent:"flex-end",
+        padding:"clamp(32px,6vw,72px)",
+      }}>
+        {/* Tag */}
+        <div style={{
+          animation:"hero-text-up .6s cubic-bezier(.22,1,.36,1) .3s both",
+          marginBottom:"16px", display:"flex", alignItems:"center", gap:"10px",
+        }}>
+          <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"rgba(255,255,255,0.5)"}} />
+          <span style={{fontSize:"11px",letterSpacing:".14em",textTransform:"uppercase",color:"rgba(255,255,255,0.5)",fontWeight:600}}>{img.caption}</span>
+        </div>
+
+        {/* Big headline */}
+        <div style={{
+          animation:"hero-text-up .7s cubic-bezier(.22,1,.36,1) .45s both",
+          marginBottom:"32px",
+        }}>
+          <div style={{
+            fontFamily:"'Playfair Display',serif",
+            fontSize:"clamp(36px,7vw,88px)",
+            fontWeight:900, lineHeight:1.0,
+            letterSpacing:"-2px",
+            color:"#fff",
+          }}>Every argument.</div>
+          <div style={{
+            fontFamily:"'Playfair Display',serif",
+            fontSize:"clamp(36px,7vw,88px)",
+            fontWeight:900, lineHeight:1.0,
+            letterSpacing:"-2px",
+            color:"rgba(255,255,255,0.4)",
+            fontStyle:"italic",
+          }}>Every motion.</div>
+        </div>
+
+        {/* Bottom bar */}
+        <div style={{
+          animation:"hero-text-up .6s cubic-bezier(.22,1,.36,1) .6s both",
+          display:"flex", justifyContent:"space-between", alignItems:"flex-end",
+          borderTop:"1px solid rgba(255,255,255,0.15)", paddingTop:"20px",
+        }}>
+          <div>
+            <div style={{fontSize:"13px",color:"rgba(255,255,255,0.4)",letterSpacing:".06em",marginBottom:"3px",textTransform:"uppercase",fontWeight:600}}>DebateVault</div>
+            <div style={{fontSize:"12px",color:"rgba(255,255,255,0.25)"}}>WSDC Argument Database</div>
+          </div>
+          <div style={{fontSize:"12px",color:"rgba(255,255,255,0.3)",letterSpacing:".1em",textTransform:"uppercase"}}>Loading…</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Animated cycling placeholder ─────────────────────────────────────────────
 const SEARCH_EXAMPLES = [
   "social media and democracy",
@@ -236,6 +321,8 @@ export default function App() {
     return saved !== null ? saved === "dark" : true;
   });
   const [showLanding, setShowLanding] = useState(() => !sessionStorage.getItem("dv-entered"));
+  const [showCinematic, setShowCinematic] = React.useState(false);
+  const [cinematicPhase, setCinematicPhase] = React.useState(0); // 0=hidden,1=in,2=hold,3=out
   const [intro, setIntro] = useState(true);
   const [introPhase, setIntroPhase] = useState(0); // 0=logo, 1=tagline, 2=zoom out, 3=done
   const T = dark ? DARK : LIGHT;
@@ -431,6 +518,12 @@ export default function App() {
     .sb-btn:active::after{opacity:0.12;}
     @keyframes ripple-anim{to{transform:scale(4);opacity:0;}}
     @keyframes cursor-blink{0%,100%{opacity:1;}50%{opacity:0;}}
+    @keyframes hero-wipe-in{from{clip-path:inset(100% 0 0 0);}to{clip-path:inset(0% 0 0 0);}}
+    @keyframes hero-wipe-out{from{clip-path:inset(0% 0 0 0);}to{clip-path:inset(0% 0 100% 0);}}
+    @keyframes hero-text-up{from{opacity:0;transform:translateY(40px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes hero-img-zoom{from{transform:scale(1.12);}to{transform:scale(1);}}
+    @keyframes browse-fade-in{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes card3d-in{from{opacity:0;transform:rotateX(18deg) scale(0.97);}to{opacity:1;transform:rotateX(0deg) scale(1);}}
     @keyframes sm-overlay-in{from{clip-path:inset(0 0 100% 0);}to{clip-path:inset(0 0 0% 0);}}
     @keyframes sm-overlay-out{from{clip-path:inset(0 0 0% 0);}to{clip-path:inset(0 0 100% 0);}}
     @keyframes sm-item-in{from{opacity:0;transform:translateY(32px);}to{opacity:1;transform:translateY(0);}}
@@ -811,11 +904,23 @@ export default function App() {
 
   // LANDING PAGE
   if (showLanding) return (
-    <LandingPage
-      dark={dark}
-      setDark={setDark}
-      onEnter={() => { sessionStorage.setItem("dv-entered","1"); setShowLanding(false); }}
-    />
+    <>
+      <LandingPage
+        dark={dark}
+        setDark={setDark}
+        onEnter={() => {
+          sessionStorage.setItem("dv-entered","1");
+          setShowCinematic(true);
+          setCinematicPhase(1);
+          setTimeout(() => setCinematicPhase(2), 700);
+          setTimeout(() => setCinematicPhase(3), 2800);
+          setTimeout(() => { setShowLanding(false); setShowCinematic(false); setCinematicPhase(0); }, 3450);
+        }}
+      />
+      {showCinematic && cinematicPhase > 0 && (
+        <CinematicEntry phase={cinematicPhase} dark={dark} />
+      )}
+    </>
   );
 
   // INTRO SCREEN — v2 clean
@@ -1051,6 +1156,56 @@ export default function App() {
       {/* BROWSE */}
       {view === "browse" && (
         <div style={{position:"relative"}}>
+          {/* 3D scroll-reveal featured motion card */}
+          {!searched && motions.length > 0 && (
+            <div style={{
+              perspective:"1200px",
+              maxWidth:"680px", margin:"0 auto",
+              padding: mobile ? "80px 16px 0" : "72px 24px 0",
+              position:"relative", zIndex:1,
+            }}>
+              <div style={{
+                animation:"card3d-in .9s cubic-bezier(.22,1,.36,1) .2s both",
+                transformStyle:"preserve-3d",
+                background:dark?"#111":"#fff",
+                border:`1px solid ${dark?"#222":"#e8e8e8"}`,
+                borderRadius:"18px",
+                padding:"28px 32px",
+                marginBottom:"0",
+                boxShadow: dark
+                  ? "0 0 0 1px #222, 0 20px 60px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)"
+                  : "0 0 0 1px #e8e8e8, 0 20px 60px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.05)",
+                cursor:"pointer",
+                transition:"transform .3s ease, box-shadow .3s ease",
+              }}
+              onClick={() => openMotion(motions[0])}
+              onMouseEnter={e => { e.currentTarget.style.transform="translateY(-4px) rotateX(2deg)"; e.currentTarget.style.boxShadow=dark?"0 0 0 1px #333, 0 32px 80px rgba(0,0,0,0.7)":"0 0 0 1px #ddd, 0 32px 80px rgba(0,0,0,0.14)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform=""; e.currentTarget.style.boxShadow=""; }}
+              >
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"16px",gap:"10px",flexWrap:"wrap"}}>
+                  <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
+                    <span style={{fontSize:"10px",fontWeight:700,letterSpacing:".07em",textTransform:"uppercase",color:(TC[motions[0].theme]||{text:"#888"}).text,background:(TC[motions[0].theme]||{bg:"transparent"}).bg,border:`1px solid ${(TC[motions[0].theme]||{border:"#333"}).border}`,padding:"2px 8px",borderRadius:"4px"}}>{motions[0].theme}</span>
+                    <span style={{fontSize:"10px",fontWeight:600,color:(DC[motions[0].difficulty]||{text:"#888"}).text,background:(DC[motions[0].difficulty]||{bg:"transparent"}).bg,border:`1px solid ${(DC[motions[0].difficulty]||{border:"#333"}).border}`,padding:"2px 8px",borderRadius:"4px"}}>{motions[0].difficulty}</span>
+                  </div>
+                  <span style={{fontSize:"10px",letterSpacing:".1em",textTransform:"uppercase",color:dark?"rgba(255,255,255,0.2)":"rgba(0,0,0,0.2)",fontWeight:600}}>Featured Motion →</span>
+                </div>
+                <p style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(17px,3vw,24px)",fontWeight:700,lineHeight:1.35,color:T.text,marginBottom:"18px",letterSpacing:"-0.3px"}}>{motions[0].motion}</p>
+                <div style={{display:"flex",gap:"16px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                    <div style={{width:"8px",height:"8px",borderRadius:"50%",background:"#16a34a"}} />
+                    <span style={{fontSize:"12px",color:T.textMuted}}>{motions[0].propArgs?.length||0} Prop args</span>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                    <div style={{width:"8px",height:"8px",borderRadius:"50%",background:"#dc2626"}} />
+                    <span style={{fontSize:"12px",color:T.textMuted}}>{motions[0].oppArgs?.length||0} Opp args</span>
+                  </div>
+                  {motions[0].tournament && (
+                    <span style={{fontSize:"12px",color:T.textMuted,marginLeft:"auto"}}>{motions[0].tournament}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           {/* Dot grid background */}
           <div style={{
             position:"fixed", inset:0, zIndex:0, pointerEvents:"none",
@@ -1066,7 +1221,7 @@ export default function App() {
               ? "radial-gradient(ellipse 100% 55% at 50% 0%, transparent 30%, #0a0a0a 100%)"
               : "radial-gradient(ellipse 100% 55% at 50% 0%, transparent 30%, #fafafa 100%)",
           }} />
-          <div style={{maxWidth:"680px",margin:"0 auto",padding:mobile?"80px 16px 24px":"72px 24px 32px",textAlign:"center",position:"relative",zIndex:1}}>
+          <div style={{maxWidth:"680px",margin:"0 auto",padding:mobile?"32px 16px 24px":"32px 24px 28px",textAlign:"center",position:"relative",zIndex:1,animation:"browse-fade-in .7s cubic-bezier(.22,1,.36,1) .15s both"}}>
             <p style={{fontSize:"11px",fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.textMuted,marginBottom:"14px"}}>WSDC Argument Database</p>
             <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,5vw,48px)",fontWeight:900,lineHeight:1.1,marginBottom:"10px",color:T.text,letterSpacing:"-1px"}}>
               Every argument.<br/><span style={{fontStyle:"italic",color:T.textMuted}}>Every motion.</span>
