@@ -177,97 +177,141 @@ function TypewriterText({ text, speed = 18, style }) {
 }
 
 // ── Cinematic entry transition ────────────────────────────────────────────────
-// Three.js dot-wave background for the cinematic screen
-function DotWaveCanvas({ dark }) {
-  const canvasRef = React.useRef(null);
+// Tilted 3D card hero — shows a DebateVault UI preview on a perspective plane
+// with mouse parallax, exactly like Halide Topo Hero
+function TiltedHeroCard({ dark }) {
+  const planeRef   = React.useRef(null);
+  const mouseRef   = React.useRef({ x: 0, y: 0 });
+  const currentRef = React.useRef({ rx: -18, ry: 8 });
+  const rafRef     = React.useRef(null);
+
   React.useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    let raf;
-    let t = 0;
-    const COLS = 28, ROWS = 18, GAP = 48;
-
-    const resize = () => {
-      canvas.width  = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+    const onMove = (e) => {
+      const mx = (e.clientX / window.innerWidth  - 0.5) * 2;
+      const my = (e.clientY / window.innerHeight - 0.5) * 2;
+      mouseRef.current = { x: mx, y: my };
     };
-    resize();
-    window.addEventListener("resize", resize);
+    window.addEventListener("mousemove", onMove);
 
-    const draw = () => {
-      const W = canvas.width, H = canvas.height;
-      ctx.clearRect(0, 0, W, H);
-      const offX = (W - (COLS - 1) * GAP) / 2;
-      const offY = (H - (ROWS - 1) * GAP) / 2;
-      for (let row = 0; row < ROWS; row++) {
-        for (let col = 0; col < COLS; col++) {
-          const wave = Math.sin(col * 0.45 + t) * Math.cos(row * 0.55 + t * 0.7);
-          const x = offX + col * GAP;
-          const y = offY + row * GAP + wave * 14;
-          const r = 1.8 + Math.abs(wave) * 2.2;
-          const alpha = 0.12 + Math.abs(wave) * 0.22;
-          ctx.beginPath();
-          ctx.arc(x, y, r, 0, Math.PI * 2);
-          ctx.fillStyle = dark
-            ? `rgba(255,255,255,${alpha})`
-            : `rgba(200,200,200,${alpha})`;
-          ctx.fill();
-        }
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const animate = () => {
+      const target = { rx: -18 + mouseRef.current.y * 8, ry: 8 + mouseRef.current.x * 12 };
+      currentRef.current.rx = lerp(currentRef.current.rx, target.rx, 0.05);
+      currentRef.current.ry = lerp(currentRef.current.ry, target.ry, 0.05);
+      if (planeRef.current) {
+        planeRef.current.style.transform =
+          `perspective(900px) rotateX(${currentRef.current.rx}deg) rotateY(${currentRef.current.ry}deg)`;
       }
-      // Overlay a faint argument-flow diagram in the centre
-      const cx = W / 2, cy = H / 2;
-      const nodes = [
-        { x: cx,        y: cy - 120, label: "CLAIM",     col: "#0284c7" },
-        { x: cx - 160,  y: cy - 20,  label: "MECHANISM", col: "#40c090" },
-        { x: cx + 160,  y: cy - 20,  label: "LINK",      col: "#ffaa44" },
-        { x: cx,        y: cy + 100, label: "IMPACT",    col: "#ff7070" },
-      ];
-      const edges = [[0,1],[0,2],[1,3],[2,3]];
-      // draw edges
-      edges.forEach(([a, b]) => {
-        const na = nodes[a], nb = nodes[b];
-        const pulse = 0.3 + Math.abs(Math.sin(t * 1.2 + a)) * 0.25;
-        ctx.beginPath();
-        ctx.moveTo(na.x, na.y);
-        ctx.lineTo(nb.x, nb.y);
-        ctx.strokeStyle = `rgba(255,255,255,${pulse * 0.18})`;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      });
-      // draw nodes
-      nodes.forEach((n, i) => {
-        const pulse = 0.7 + Math.sin(t * 1.5 + i * 0.8) * 0.3;
-        // glow
-        const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, 28);
-        grad.addColorStop(0, n.col + "33");
-        grad.addColorStop(1, n.col + "00");
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, 28, 0, Math.PI * 2);
-        ctx.fillStyle = grad;
-        ctx.fill();
-        // circle
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, 10 * pulse, 0, Math.PI * 2);
-        ctx.fillStyle = n.col + "aa";
-        ctx.fill();
-        ctx.strokeStyle = n.col + "ff";
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-        // label
-        ctx.font = "600 9px 'DM Sans', sans-serif";
-        ctx.letterSpacing = "0.08em";
-        ctx.fillStyle = "rgba(255,255,255,0.35)";
-        ctx.textAlign = "center";
-        ctx.fillText(n.label, n.x, n.y + 22);
-      });
-      t += 0.018;
-      raf = requestAnimationFrame(draw);
+      rafRef.current = requestAnimationFrame(animate);
     };
-    draw();
-    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
-  }, [dark]);
-  return <canvas ref={canvasRef} style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />;
+    rafRef.current = requestAnimationFrame(animate);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  // Simulated stress-test chat content inside the card
+  const chatLines = [
+    { role:"user",  text:"Stress test: Economic sanctions lead to regime change" },
+    { role:"ai",    text:"Weakest link: The mechanism assumes the middle class acts politically when they lose savings — but empirical evidence from Iran, Cuba, and North Korea shows economic pain often increases nationalism, not opposition." },
+    { role:"label", text:"HOW TO STRENGTHEN", col:"#16a34a" },
+    { role:"fix",   text:"Add a causal step: sanctions → currency collapse → middle-class savings wiped → loss of social contract → political action. This makes the chain empirically defensible." },
+  ];
+
+  return (
+    <div style={{
+      position:"absolute", inset:0, display:"flex",
+      alignItems:"center", justifyContent:"center",
+      zIndex:0, overflow:"hidden",
+    }}>
+      {/* Background grain */}
+      <div style={{
+        position:"absolute", inset:0,
+        background:"#0a0a0a",
+        backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E")`,
+      }} />
+
+      {/* The tilted 3D plane */}
+      <div ref={planeRef} style={{
+        transform:"perspective(900px) rotateX(-18deg) rotateY(8deg)",
+        transformStyle:"preserve-3d",
+        width:"clamp(420px,55vw,680px)",
+        willChange:"transform",
+        marginTop:"-60px",
+        marginRight:"-40px",
+        alignSelf:"center",
+      }}>
+        {/* Card shell */}
+        <div style={{
+          background:"#111",
+          border:"1px solid #252525",
+          borderRadius:"16px",
+          overflow:"hidden",
+          boxShadow:"0 40px 100px rgba(0,0,0,0.9), 0 8px 24px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)",
+        }}>
+          {/* Window chrome */}
+          <div style={{
+            padding:"11px 16px",
+            borderBottom:"1px solid #1e1e1e",
+            background:"#0d0d0d",
+            display:"flex", alignItems:"center", gap:"8px",
+          }}>
+            <div style={{display:"flex",gap:"5px"}}>
+              {["#ff5f57","#febc2e","#28c840"].map(col =>
+                <div key={col} style={{width:"9px",height:"9px",borderRadius:"50%",background:col}} />
+              )}
+            </div>
+            <div style={{flex:1,height:"18px",background:"#1a1a1a",borderRadius:"4px",maxWidth:"180px",margin:"0 auto"}} />
+            <span style={{fontSize:"10px",color:"#333",letterSpacing:".05em"}}>debatevault.vercel.app</span>
+          </div>
+
+          {/* Section header */}
+          <div style={{padding:"14px 18px 10px",borderBottom:"1px solid #161616",display:"flex",alignItems:"center",gap:"8px"}}>
+            <div style={{width:"22px",height:"22px",borderRadius:"6px",background:"#0f0f0f",border:"1px solid #222",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"11px"}}>⚡</div>
+            <span style={{fontSize:"12px",fontWeight:600,color:"rgba(255,255,255,0.7)"}}>AI Stress Test</span>
+            <span style={{fontSize:"10px",color:"#333",marginLeft:"auto",letterSpacing:".04em"}}>Groq · llama-3.3-70b</span>
+          </div>
+
+          {/* Chat content */}
+          <div style={{padding:"14px 18px",display:"flex",flexDirection:"column",gap:"10px",maxHeight:"260px",overflow:"hidden"}}>
+            {chatLines.map((line, i) => {
+              if (line.role === "label") return (
+                <div key={i} style={{fontSize:"9px",fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:line.col,marginTop:"4px"}}>{line.text}</div>
+              );
+              if (line.role === "user") return (
+                <div key={i} style={{background:"#1a1a1a",border:"1px solid #222",borderRadius:"8px",padding:"8px 12px",fontSize:"11px",color:"rgba(255,255,255,0.5)",lineHeight:1.5}}>{line.text}</div>
+              );
+              if (line.role === "ai") return (
+                <div key={i} style={{background:"rgba(220,38,38,0.07)",border:"1px solid rgba(220,38,38,0.2)",borderRadius:"8px",padding:"10px 12px",fontSize:"11px",color:"rgba(255,255,255,0.6)",lineHeight:1.65,fontStyle:"italic"}}>{line.text}</div>
+              );
+              return (
+                <div key={i} style={{background:"rgba(22,163,74,0.07)",border:"1px solid rgba(22,163,74,0.18)",borderRadius:"8px",padding:"10px 12px",fontSize:"11px",color:"rgba(255,255,255,0.6)",lineHeight:1.65}}>{line.text}</div>
+              );
+            })}
+          </div>
+
+          {/* Bottom action bar */}
+          <div style={{padding:"10px 18px 12px",borderTop:"1px solid #161616",display:"flex",alignItems:"center",gap:"8px"}}>
+            <div style={{flex:1,height:"32px",background:"#0f0f0f",border:"1px solid #1e1e1e",borderRadius:"8px",display:"flex",alignItems:"center",padding:"0 10px",gap:"6px"}}>
+              <span style={{fontSize:"10px",color:"#2a2a2a"}}>Add a block…</span>
+            </div>
+            <div style={{width:"32px",height:"32px",borderRadius:"8px",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px"}}>⚡</div>
+          </div>
+        </div>
+
+        {/* Subtle reflection below */}
+        <div style={{
+          height:"40px",
+          background:"linear-gradient(to bottom, rgba(255,255,255,0.03), transparent)",
+          transform:"scaleY(-1) translateY(-2px)",
+          filter:"blur(4px)",
+          borderRadius:"0 0 16px 16px",
+          opacity:0.4,
+        }} />
+      </div>
+    </div>
+  );
 }
 
 function CinematicEntry({ phase, dark }) {
@@ -275,47 +319,46 @@ function CinematicEntry({ phase, dark }) {
     <div style={{
       position:"fixed", inset:0, zIndex:9000,
       fontFamily:"'DM Sans',sans-serif",
-      background: "#0a0a0a",
+      background:"#0a0a0a",
       animation: phase===3
         ? "hero-wipe-out .65s cubic-bezier(.76,0,.24,1) both"
         : "hero-wipe-in .7s cubic-bezier(.76,0,.24,1) both",
       overflow:"hidden",
+      display:"flex",
     }}>
-      {/* Animated dot-wave + logic chain canvas */}
-      <DotWaveCanvas dark={true} />
-      {/* Vignette overlay */}
-      <div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse 80% 70% at 50% 50%, transparent 30%, rgba(0,0,0,0.75) 100%)",zIndex:1,pointerEvents:"none"}} />
-
-      {/* Content */}
+      {/* Left text column */}
       <div style={{
         position:"absolute", inset:0, zIndex:2,
         display:"flex", flexDirection:"column",
         justifyContent:"flex-end",
         padding:"clamp(32px,6vw,72px)",
+        pointerEvents:"none",
       }}>
-        <div style={{
-          animation:"hero-text-up .6s cubic-bezier(.22,1,.36,1) .3s both",
-          marginBottom:"16px", display:"flex", alignItems:"center", gap:"10px",
-        }}>
-          <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"rgba(255,255,255,0.4)"}} />
-          <span style={{fontSize:"11px",letterSpacing:".14em",textTransform:"uppercase",color:"rgba(255,255,255,0.4)",fontWeight:600}}>WSDC Argument Database</span>
+        <div style={{ animation:"hero-text-up .6s cubic-bezier(.22,1,.36,1) .3s both", marginBottom:"16px", display:"flex", alignItems:"center", gap:"10px" }}>
+          <div style={{width:"18px",height:"1px",background:"rgba(255,255,255,0.35)"}} />
+          <span style={{fontSize:"10px",letterSpacing:".18em",textTransform:"uppercase",color:"rgba(255,255,255,0.35)",fontWeight:700}}>WSDC ARGUMENT DATABASE</span>
         </div>
         <div style={{ animation:"hero-text-up .7s cubic-bezier(.22,1,.36,1) .45s both", marginBottom:"32px" }}>
-          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(36px,7vw,88px)", fontWeight:900, lineHeight:1.0, letterSpacing:"-2px", color:"#fff" }}>Every argument.</div>
-          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(36px,7vw,88px)", fontWeight:900, lineHeight:1.0, letterSpacing:"-2px", color:"rgba(255,255,255,0.35)", fontStyle:"italic" }}>Every motion.</div>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(38px,7vw,90px)", fontWeight:900, lineHeight:0.95, letterSpacing:"-2px", color:"#fff" }}>Every</div>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(38px,7vw,90px)", fontWeight:900, lineHeight:0.95, letterSpacing:"-2px", color:"#fff" }}>argument.</div>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(38px,7vw,90px)", fontWeight:900, lineHeight:0.95, letterSpacing:"-2px", color:"rgba(255,255,255,0.28)", fontStyle:"italic", marginTop:"4px" }}>Every motion.</div>
         </div>
         <div style={{
           animation:"hero-text-up .6s cubic-bezier(.22,1,.36,1) .6s both",
           display:"flex", justifyContent:"space-between", alignItems:"flex-end",
-          borderTop:"1px solid rgba(255,255,255,0.1)", paddingTop:"20px",
+          borderTop:"1px solid rgba(255,255,255,0.08)", paddingTop:"20px",
+          maxWidth:"520px",
         }}>
           <div>
-            <div style={{fontSize:"13px",color:"rgba(255,255,255,0.35)",letterSpacing:".06em",marginBottom:"3px",textTransform:"uppercase",fontWeight:600}}>DebateVault</div>
-            <div style={{fontSize:"12px",color:"rgba(255,255,255,0.2)"}}>Build arguments. Win rounds.</div>
+            <div style={{fontSize:"13px",color:"rgba(255,255,255,0.3)",letterSpacing:".06em",marginBottom:"3px",textTransform:"uppercase",fontWeight:600}}>DebateVault</div>
+            <div style={{fontSize:"12px",color:"rgba(255,255,255,0.18)"}}>Build arguments. Win rounds.</div>
           </div>
-          <div style={{fontSize:"12px",color:"rgba(255,255,255,0.25)",letterSpacing:".1em",textTransform:"uppercase"}}>Loading…</div>
+          <div style={{fontSize:"11px",color:"rgba(255,255,255,0.2)",letterSpacing:".12em",textTransform:"uppercase"}}>Loading…</div>
         </div>
       </div>
+
+      {/* 3D tilted card — right side, mouse-parallax */}
+      <TiltedHeroCard dark={true} />
     </div>
   );
 }
@@ -422,26 +465,26 @@ function ScrollStackHero({ dark, motions, onComplete, onCardClick }) {
                     style={{ position: i===0?"relative":"absolute", left: i===0?"auto":"0", right: i===0?"auto":"0", top: i===0?"auto":"0",
                       opacity:0, transformOrigin:"top center", willChange:"transform,opacity",
                       background: dark?"#0f0f0f":"#fff",
-                      border:`1px solid ${dark?"#1e1e1e":"#e8e8e8"}`, borderRadius:"20px", padding:"28px 32px",
-                      boxShadow: dark?"0 12px 48px rgba(0,0,0,0.65)":"0 12px 48px rgba(0,0,0,0.10)",
+                      border:`2px solid ${dark?"#2a2a2a":"#d8d8d8"}`, borderRadius:"24px", padding:"36px 40px",
+                      boxShadow: dark?"0 20px 70px rgba(0,0,0,0.75), 0 0 0 1px #1a1a1a":"0 20px 70px rgba(0,0,0,0.13), 0 0 0 1px #eee",
                       cursor:"pointer", overflow:"hidden",
                       marginBottom: i===0 ? `${STACK_H/(stackMotions.length+1)}px` : 0 }}>
                     {/* Top accent */}
-                    <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:`linear-gradient(90deg,${col.accent},transparent)`}} />
+                    <div style={{position:"absolute",top:0,left:0,right:0,height:"4px",background:`linear-gradient(90deg,${col.accent},${col.accent}44,transparent)`,borderRadius:"20px 20px 0 0"}} />
                     {/* Header */}
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
-                      <span style={{fontSize:"10px",fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:col.accent,background:col.bg,border:`1px solid ${col.border}`,padding:"3px 10px",borderRadius:"20px"}}>{side}</span>
+                      <span style={{fontSize:"11px",fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:col.accent,background:col.bg,border:`2px solid ${col.border}`,padding:"5px 14px",borderRadius:"20px"}}>{side}</span>
                       <span style={{fontSize:"10px",color:dark?"#444":"#bbb",letterSpacing:".06em",fontWeight:600,textTransform:"uppercase"}}>{motion.theme}</span>
                     </div>
                     {/* Motion */}
                     <p style={{fontSize:"11px",color:dark?"#555":"#aaa",marginBottom:"6px",lineHeight:1.4}}>{motion.motion}</p>
                     {/* Argument name */}
-                    <p style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(16px,2.5vw,22px)",fontWeight:800,lineHeight:1.3,color:dark?"#eee":"#111",letterSpacing:"-0.3px",marginBottom:"14px"}}>
+                    <p style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(20px,3vw,28px)",fontWeight:800,lineHeight:1.25,color:dark?"#eee":"#111",letterSpacing:"-0.5px",marginBottom:"16px"}}>
                       {arg?.name || `${side} argument`}
                     </p>
                     {/* Summary preview */}
                     {arg?.summary && (
-                      <p style={{fontSize:"13px",color:dark?"#666":"#888",lineHeight:1.65,display:"-webkit-box",WebkitLineClamp:3,WebkitBoxOrient:"vertical",overflow:"hidden"}}>
+                      <p style={{fontSize:"14px",color:dark?"#777":"#777",lineHeight:1.7,display:"-webkit-box",WebkitLineClamp:3,WebkitBoxOrient:"vertical",overflow:"hidden"}}>
                         {arg.summary}
                       </p>
                     )}
