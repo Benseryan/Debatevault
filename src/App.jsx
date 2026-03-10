@@ -1252,30 +1252,37 @@ export default function App() {
         setDark={setDark}
         onEnter={() => {
           sessionStorage.setItem("dv-entered","1");
-          setShowCinematic(true);
           setCinematicPhase(1);
-          setTimeout(() => setCinematicPhase(2), 700);
-          setShowLanding(false);
+          setShowCinematic(true);
+          // Delay hiding landing so cinematic wipe-in covers it
+          setTimeout(() => setShowLanding(false), 400);
         }}
       />
+      {/* Cinematic fires on top of landing page before main app mounts */}
+      {showCinematic && cinematicPhase > 0 && (
+        <div style={{position:"fixed",inset:0,zIndex:9999}}>
+          <style>{`
+            @keyframes hero-wipe-in{from{clip-path:inset(100% 0 0 0);}to{clip-path:inset(0% 0 0 0);}}
+            @keyframes hero-wipe-out{from{clip-path:inset(0% 0 0 0);}to{clip-path:inset(0% 0 100% 0);}}
+            @keyframes hero-text-up{from{opacity:0;transform:translateY(40px);}to{opacity:1;transform:translateY(0);}}
+          `}</style>
+          <CinematicEntry
+            phase={cinematicPhase}
+            dark={dark}
+            onExplore={() => {
+              setCinematicPhase(3);
+              setTimeout(() => {
+                setShowCinematic(false);
+                setCinematicPhase(0);
+                setShowLanding(false);
+                setFromLanding(true);
+                window.scrollTo({ top: 0, behavior: "instant" });
+              }, 680);
+            }}
+          />
+        </div>
+      )}
     </>
-  );
-
-  // CINEMATIC OVERLAY — rendered at top level so it persists after showLanding=false
-  if (showCinematic && cinematicPhase > 0) return (
-    <CinematicEntry
-      phase={cinematicPhase}
-      dark={dark}
-      onExplore={() => {
-        setCinematicPhase(3);
-        setTimeout(() => {
-          setShowCinematic(false);
-          setCinematicPhase(0);
-          setFromLanding(true);
-          window.scrollTo({ top: 0, behavior: "instant" });
-        }, 680);
-      }}
-    />
   );
 
   // INTRO SCREEN — v2 clean
@@ -1364,6 +1371,23 @@ export default function App() {
   return (
     <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"'DM Sans',sans-serif",transition:"background .2s,color .2s",display:"flex"}}>
       <style>{STYLES}</style>
+
+      {/* ── Cinematic overlay — fixed on top of everything, persists through transition ── */}
+      {showCinematic && cinematicPhase > 0 && (
+        <CinematicEntry
+          phase={cinematicPhase}
+          dark={dark}
+          onExplore={() => {
+            setCinematicPhase(3);
+            setTimeout(() => {
+              setShowCinematic(false);
+              setCinematicPhase(0);
+              setFromLanding(true);
+              window.scrollTo({ top: 0, behavior: "instant" });
+            }, 680);
+          }}
+        />
+      )}
 
       {toast && (
         <div style={{position:"fixed",bottom:"24px",left:"50%",transform:"translateX(-50%)",background:T.surface,border:`1px solid ${toast.isError?"#dc262655":T.border}`,borderRadius:"8px",padding:"11px 22px",fontSize:"13px",color:toast.isError?"#dc2626":T.text,zIndex:999,boxShadow:"0 4px 24px rgba(0,0,0,.15)",whiteSpace:"nowrap",fontWeight:500}}>
