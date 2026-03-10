@@ -334,7 +334,7 @@ function CinematicEntry({ phase, dark, onExplore }) {
         display:"flex", flexDirection:"column",
         justifyContent:"flex-end",
         padding:"clamp(32px,6vw,72px)",
-        pointerEvents:"none",
+        pointerEvents:"none", /* children that need clicks must set pointerEvents:"auto" */
       }}>
         <div style={{ animation:"hero-text-up .6s cubic-bezier(.22,1,.36,1) .3s both", marginBottom:"16px", display:"flex", alignItems:"center", gap:"10px" }}>
           <div style={{width:"18px",height:"1px",background:"rgba(255,255,255,0.35)"}} />
@@ -367,6 +367,7 @@ function CinematicEntry({ phase, dark, onExplore }) {
               display:"flex", alignItems:"center", gap:"10px",
               transition:"opacity .2s, transform .15s",
               boxShadow:"0 4px 20px rgba(255,255,255,0.12)",
+              pointerEvents:"auto",
             }}
             onMouseEnter={e=>{e.currentTarget.style.opacity=".85"; e.currentTarget.style.transform="translateY(-1px)";}}
             onMouseLeave={e=>{e.currentTarget.style.opacity="1"; e.currentTarget.style.transform="translateY(0)";}}
