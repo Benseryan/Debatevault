@@ -664,7 +664,6 @@ export default function App() {
   const [showCinematic, setShowCinematic] = React.useState(false);
   const [cinematicPhase, setCinematicPhase] = React.useState(0);
   const [fromLanding, setFromLanding] = React.useState(false);
-  const [browseReady, setBrowseReady] = React.useState(false);
   const [intro, setIntro] = useState(true);
   const [introPhase, setIntroPhase] = useState(0); // 0=logo, 1=tagline, 2=zoom out, 3=done
   const T = dark ? DARK : LIGHT;
@@ -1541,17 +1540,14 @@ export default function App() {
             <ScrollStackHero
               dark={dark}
               motions={motions}
-              onComplete={() => { setTimeout(() => { setFromLanding(false); setBrowseReady(false); setTimeout(() => setBrowseReady(true), 80); }, 650); }}
+              onComplete={() => { setFromLanding(false); }}
               onCardClick={(m) => openMotion(m)}
             />
           )}
 
           {/* Browse content anchor */}
           <div id="browse-content" />
-          {/* Transition cover — prevents glimpse during wipe-in */}
-          {fromLanding && !browseReady && (
-            <div style={{position:"fixed",inset:0,zIndex:500,background:dark?"#0a0a0a":"#fafafa",pointerEvents:"none"}} />
-          )}
+
           {/* Dot grid background */}
           <div style={{
             position:"fixed", inset:0, zIndex:0, pointerEvents:"none",
@@ -1568,12 +1564,12 @@ export default function App() {
               : "radial-gradient(ellipse 100% 55% at 50% 0%, transparent 30%, #fafafa 100%)",
           }} />
           <div style={{maxWidth:"680px",margin:"0 auto",padding:mobile?"72px 16px 24px":"72px 24px 32px",textAlign:"center",position:"relative",zIndex:1}}>
-            <p style={{fontSize:"11px",fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.textMuted,marginBottom:"14px",animation:fromLanding&&browseReady?"browse-fade-in .5s cubic-bezier(.22,1,.36,1) .05s both":"none",opacity:fromLanding&&!browseReady?0:1}}>WSDC Argument Database</p>
-            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,5vw,48px)",fontWeight:900,lineHeight:1.1,marginBottom:"10px",color:T.text,letterSpacing:"-1px",animation:fromLanding&&browseReady?"browse-fade-in .6s cubic-bezier(.22,1,.36,1) .12s both":"none",opacity:fromLanding&&!browseReady?0:1}}>
+            <p style={{fontSize:"11px",fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.textMuted,marginBottom:"14px",animation:"browse-fade-in .5s cubic-bezier(.22,1,.36,1) .05s both"}}>WSDC Argument Database</p>
+            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,5vw,48px)",fontWeight:900,lineHeight:1.1,marginBottom:"10px",color:T.text,letterSpacing:"-1px",animation:"browse-fade-in .6s cubic-bezier(.22,1,.36,1) .12s both"}}>
               Every argument.<br/><span style={{fontStyle:"italic",color:T.textMuted}}>Every motion.</span>
             </h1>
-            <p style={{color:T.textMuted,fontSize:"15px",marginBottom:"28px",lineHeight:1.7,animation:fromLanding&&browseReady?"browse-fade-in .6s cubic-bezier(.22,1,.36,1) .22s both":"none",opacity:fromLanding&&!browseReady?0:1}}>Search any topic and find ready-to-use Proposition and Opposition arguments.</p>
-            <div style={{display:"flex",gap:"10px",maxWidth:"580px",margin:"0 auto",animation:fromLanding&&browseReady?"browse-fade-in .6s cubic-bezier(.22,1,.36,1) .32s both":"none",opacity:fromLanding&&!browseReady?0:1}}>
+            <p style={{color:T.textMuted,fontSize:"15px",marginBottom:"28px",lineHeight:1.7,animation:"browse-fade-in .6s cubic-bezier(.22,1,.36,1) .22s both"}}>Search any topic and find ready-to-use Proposition and Opposition arguments.</p>
+            <div style={{display:"flex",gap:"10px",maxWidth:"580px",margin:"0 auto",animation:"browse-fade-in .6s cubic-bezier(.22,1,.36,1) .32s both"}}>
               <div style={{flex:1,position:"relative",background:T.surface,border:`1px solid ${T.border}`,borderRadius:"9px",transition:"border-color .2s",display:"flex",alignItems:"center"}}>
                 <span style={{position:"absolute",left:"14px",color:T.textMuted,fontSize:"17px",pointerEvents:"none",zIndex:2,flexShrink:0}}>⌕</span>
                 <AnimatedPlaceholder query={query} dark={dark} />
@@ -1587,7 +1583,7 @@ export default function App() {
           </div>
 
           {!searched && (
-            <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 16px",position:"relative",zIndex:1,display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center",animation:fromLanding&&browseReady?"browse-fade-in .5s cubic-bezier(.22,1,.36,1) .4s both":"none",opacity:fromLanding&&!browseReady?0:1}}>
+            <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 16px",position:"relative",zIndex:1,display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center",animation:"browse-fade-in .5s cubic-bezier(.22,1,.36,1) .4s both"}}>
               <select value={filterTheme} onChange={e => { setFilterTheme(e.target.value); setFilterSubtheme("All"); }} style={{padding:"6px 12px",background:T.surface,border:`1px solid ${T.border}`,borderRadius:"6px",color:T.text,fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>
                 {THEMES.map(t => <option key={t}>{t}</option>)}
               </select>
@@ -1612,7 +1608,7 @@ export default function App() {
             </div>
           )}
 
-          <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 60px",position:"relative",zIndex:1,display:"grid",gridTemplateColumns:mobile?"1fr":"repeat(auto-fill,minmax(280px,1fr))",gap:"10px",animation:fromLanding&&browseReady?"browse-fade-in .7s cubic-bezier(.22,1,.36,1) .45s both":"none",opacity:fromLanding&&!browseReady?0:1}}>
+          <div style={{maxWidth:"1080px",margin:"0 auto",padding:"0 24px 60px",position:"relative",zIndex:1,display:"grid",gridTemplateColumns:mobile?"1fr":"repeat(auto-fill,minmax(280px,1fr))",gap:"10px",animation:"browse-fade-in .7s cubic-bezier(.22,1,.36,1) .45s both"}}>
             {displayed.map(m => (
               <div key={m.id} className="card" onClick={() => openMotion(m)} style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:"10px",padding:"20px",boxShadow:"none"}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:"10px",alignItems:"flex-start",gap:"6px"}}>
