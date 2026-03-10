@@ -1010,7 +1010,20 @@ export default function App() {
       {view === "browse" && (
         <div style={{position:"relative"}}>
           {/* Dot grid background */}
-          <div style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",backgroundImage:`radial-gradient(circle, ${dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.09)"} 1px, transparent 1px)`,backgroundSize:"28px 28px",maskImage:"radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%)",WebkitMaskImage:"radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%)"}} />
+          <div style={{
+            position:"fixed", inset:0, zIndex:0, pointerEvents:"none",
+            backgroundImage: dark
+              ? "radial-gradient(circle, rgba(255,255,255,0.18) 1px, transparent 1px)"
+              : "radial-gradient(circle, rgba(0,0,0,0.13) 1px, transparent 1px)",
+            backgroundSize:"30px 30px",
+          }} />
+          {/* Fade-out gradient overlay so dots don't show at bottom */}
+          <div style={{
+            position:"fixed", inset:0, zIndex:0, pointerEvents:"none",
+            background: dark
+              ? "radial-gradient(ellipse 100% 55% at 50% 0%, transparent 30%, #0a0a0a 100%)"
+              : "radial-gradient(ellipse 100% 55% at 50% 0%, transparent 30%, #fafafa 100%)",
+          }} />
           <div style={{maxWidth:"680px",margin:"0 auto",padding:mobile?"72px 16px 24px":"48px 24px 32px",textAlign:"center",position:"relative",zIndex:1}}>
             <p style={{fontSize:"11px",fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.textMuted,marginBottom:"14px"}}>WSDC Argument Database</p>
             <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,5vw,48px)",fontWeight:900,lineHeight:1.1,marginBottom:"10px",color:T.text,letterSpacing:"-1px"}}>
