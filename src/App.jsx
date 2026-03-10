@@ -261,6 +261,159 @@ function CinematicEntry({ phase, dark }) {
   );
 }
 
+// ── Parallax Scroll Hero (from-landing only) ─────────────────────────────────
+const HERO_IMAGES = [
+  "https://images.unsplash.com/photo-1528901166007-3784c7dd3653?w=1400&q=85&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1400&q=85&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1400&q=85&auto=format&fit=crop",
+];
+
+function ParallaxHero({ dark, motions, onScrollPast, onCardClick }) {
+  const sectionRef = React.useRef(null);
+  const imgRef = React.useRef(null);
+  const card3dRef = React.useRef(null);
+  const heroTextRef = React.useRef(null);
+  const [scrolled, setScrolled] = React.useState(false);
+  const [imgIdx] = React.useState(() => Math.floor(Math.random() * HERO_IMAGES.length));
+  const SECTION_H = typeof window !== "undefined" ? window.innerHeight * 2.4 : 2000;
+
+  React.useEffect(() => {
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const scrollY = window.scrollY;
+        const progress = Math.min(scrollY / (SECTION_H * 0.55), 1);
+
+        // Clip-path expand: starts as small centered rectangle, grows to full
+        if (imgRef.current) {
+          const p1 = Math.max(0, 28 - progress * 28);
+          const p2 = Math.min(100, 72 + progress * 28);
+          imgRef.current.style.clipPath = `polygon(${p1}% ${p1}%, ${p2}% ${p1}%, ${p2}% ${p2}%, ${p1}% ${p2}%)`;
+          imgRef.current.style.backgroundSize = `${170 - progress * 70}%`;
+          imgRef.current.style.opacity = progress < 0.85 ? 1 : Math.max(0, 1 - (progress - 0.85) * 6.67);
+        }
+
+        // 3D card tilt: starts tilted, straightens as we scroll
+        if (card3dRef.current) {
+          const cardProgress = Math.max(0, Math.min(1, (scrollY - window.innerHeight * 0.3) / (window.innerHeight * 0.7)));
+          const rotateX = 22 * (1 - cardProgress);
+          const scale = 0.88 + 0.12 * cardProgress;
+          const translateY = 60 * (1 - cardProgress);
+          card3dRef.current.style.transform = `rotateX(${rotateX}deg) scale(${scale}) translateY(${translateY}px)`;
+          card3dRef.current.style.opacity = Math.min(1, cardProgress * 2);
+        }
+
+        // Hero text parallax up
+        if (heroTextRef.current) {
+          const t = Math.min(1, scrollY / (window.innerHeight * 0.5));
+          heroTextRef.current.style.transform = `translateY(${-t * 60}px)`;
+          heroTextRef.current.style.opacity = Math.max(0, 1 - t * 1.8);
+        }
+
+        // Signal when fully scrolled past
+        if (scrollY > SECTION_H * 0.92 && !scrolled) {
+          setScrolled(true);
+          onScrollPast && onScrollPast();
+        }
+        ticking = false;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [scrolled, SECTION_H]);
+
+  const featMotion = motions && motions.length > 0 ? motions[0] : null;
+
+  return (
+    <div ref={sectionRef} style={{ height: SECTION_H + "px", position:"relative", width:"100%" }}>
+
+      {/* ── Sticky parallax image ── */}
+      <div style={{ position:"sticky", top:0, height:"100vh", overflow:"hidden", zIndex:1 }}>
+        <div
+          ref={imgRef}
+          style={{
+            position:"absolute", inset:0,
+            backgroundImage: `url(${HERO_IMAGES[imgIdx]})`,
+            backgroundSize:"170%", backgroundPosition:"center", backgroundRepeat:"no-repeat",
+            clipPath:"polygon(28% 28%, 72% 28%, 72% 72%, 28% 72%)",
+            transition:"none",
+          }}
+        />
+        {/* Overlay */}
+        <div style={{ position:"absolute", inset:0, background:"linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%)", zIndex:2 }} />
+
+        {/* Hero text — fades out on scroll */}
+        <div ref={heroTextRef} style={{ position:"absolute", inset:0, zIndex:3, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"clamp(32px,6vw,80px)", pointerEvents:"none" }}>
+          <div style={{ fontSize:"11px", letterSpacing:".14em", textTransform:"uppercase", color:"rgba(255,255,255,0.45)", fontWeight:600, marginBottom:"14px", display:"flex", alignItems:"center", gap:"8px" }}>
+            <div style={{ width:"20px", height:"1px", background:"rgba(255,255,255,0.4)" }} />
+            WSDC Argument Database
+          </div>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(40px,8vw,96px)", fontWeight:900, lineHeight:0.95, letterSpacing:"-3px", color:"#fff", marginBottom:"8px" }}>Every argument.</div>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(40px,8vw,96px)", fontWeight:900, lineHeight:0.95, letterSpacing:"-3px", color:"rgba(255,255,255,0.35)", fontStyle:"italic" }}>Every motion.</div>
+          <div style={{ marginTop:"28px", fontSize:"13px", color:"rgba(255,255,255,0.35)", letterSpacing:".06em" }}>↓ Scroll to explore</div>
+        </div>
+      </div>
+
+      {/* ── 3D scroll card ── */}
+      <div style={{ position:"absolute", top:"85vh", left:0, right:0, zIndex:10, perspective:"1200px", padding:"0 24px" }}>
+        <div style={{ maxWidth:"720px", margin:"0 auto" }}>
+          <div
+            ref={card3dRef}
+            style={{
+              transformStyle:"preserve-3d",
+              transform:"rotateX(22deg) scale(0.88) translateY(60px)",
+              opacity:0,
+              transition:"none",
+              borderRadius:"24px",
+              border: dark ? "1px solid #2a2a2a" : "1px solid #ddd",
+              background: dark ? "#0f0f0f" : "#fff",
+              boxShadow:"0 0 #0000004d, 0 9px 20px #0000004a, 0 37px 37px #00000042, 0 84px 50px #00000026, 0 149px 60px #0000000a",
+              overflow:"hidden",
+            }}
+          >
+            {/* Card header bar */}
+            <div style={{ padding:"14px 20px", borderBottom: dark?"1px solid #1e1e1e":"1px solid #f0f0f0", display:"flex", alignItems:"center", gap:"8px", background: dark?"#0a0a0a":"#fafafa" }}>
+              <div style={{ display:"flex", gap:"6px" }}>
+                {["#ff5f57","#febc2e","#28c840"].map(col => (
+                  <div key={col} style={{ width:"10px", height:"10px", borderRadius:"50%", background:col }} />
+                ))}
+              </div>
+              <div style={{ flex:1, height:"20px", background: dark?"#1a1a1a":"#efefef", borderRadius:"4px", maxWidth:"200px", margin:"0 auto" }} />
+              <span style={{ fontSize:"11px", color: dark?"#333":"#bbb", letterSpacing:".06em" }}>debatevault.vercel.app</span>
+            </div>
+
+            {/* Card content — featured motion */}
+            {featMotion ? (
+              <div style={{ padding:"32px 36px" }} onClick={() => onCardClick && onCardClick(featMotion)}>
+                <div style={{ fontSize:"10px", fontWeight:700, letterSpacing:".1em", textTransform:"uppercase", color: dark?"#555":"#aaa", marginBottom:"20px" }}>Featured Motion</div>
+                <p style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(18px,3vw,28px)", fontWeight:800, lineHeight:1.3, color: dark?"#f0f0f0":"#111", letterSpacing:"-0.5px", marginBottom:"28px" }}>{featMotion.motion}</p>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px" }}>
+                  <div style={{ padding:"14px 16px", borderRadius:"10px", background: dark?"rgba(22,163,74,0.08)":"rgba(22,163,74,0.05)", border:"1px solid rgba(22,163,74,0.2)" }}>
+                    <div style={{ fontSize:"10px", fontWeight:700, color:"#16a34a", letterSpacing:".08em", textTransform:"uppercase", marginBottom:"6px" }}>Proposition</div>
+                    <div style={{ fontSize:"13px", color: dark?"#aaa":"#555", lineHeight:1.5 }}>{featMotion.propArgs?.[0]?.name || "View arguments →"}</div>
+                  </div>
+                  <div style={{ padding:"14px 16px", borderRadius:"10px", background: dark?"rgba(220,38,38,0.08)":"rgba(220,38,38,0.05)", border:"1px solid rgba(220,38,38,0.2)" }}>
+                    <div style={{ fontSize:"10px", fontWeight:700, color:"#dc2626", letterSpacing:".08em", textTransform:"uppercase", marginBottom:"6px" }}>Opposition</div>
+                    <div style={{ fontSize:"13px", color: dark?"#aaa":"#555", lineHeight:1.5 }}>{featMotion.oppArgs?.[0]?.name || "View arguments →"}</div>
+                  </div>
+                </div>
+                <div style={{ marginTop:"16px", display:"flex", gap:"8px", flexWrap:"wrap" }}>
+                  <span style={{ fontSize:"10px", fontWeight:700, color:(TC[featMotion.theme]||{text:"#888"}).text, background:(TC[featMotion.theme]||{bg:"transparent"}).bg, border:`1px solid ${(TC[featMotion.theme]||{border:"#333"}).border}`, padding:"2px 8px", borderRadius:"4px" }}>{featMotion.theme}</span>
+                  <span style={{ fontSize:"10px", fontWeight:600, color:(DC[featMotion.difficulty]||{text:"#888"}).text, background:(DC[featMotion.difficulty]||{bg:"transparent"}).bg, border:`1px solid ${(DC[featMotion.difficulty]||{border:"#333"}).border}`, padding:"2px 8px", borderRadius:"4px" }}>{featMotion.difficulty}</span>
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding:"48px 36px", textAlign:"center", color: dark?"#333":"#ccc", fontFamily:"'Playfair Display',serif", fontSize:"18px", fontStyle:"italic" }}>Loading motions…</div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Animated cycling placeholder ─────────────────────────────────────────────
 const SEARCH_EXAMPLES = [
   "social media and democracy",
@@ -322,7 +475,8 @@ export default function App() {
   });
   const [showLanding, setShowLanding] = useState(() => !sessionStorage.getItem("dv-entered"));
   const [showCinematic, setShowCinematic] = React.useState(false);
-  const [cinematicPhase, setCinematicPhase] = React.useState(0); // 0=hidden,1=in,2=hold,3=out
+  const [cinematicPhase, setCinematicPhase] = React.useState(0);
+  const [fromLanding, setFromLanding] = React.useState(false);
   const [intro, setIntro] = useState(true);
   const [introPhase, setIntroPhase] = useState(0); // 0=logo, 1=tagline, 2=zoom out, 3=done
   const T = dark ? DARK : LIGHT;
@@ -914,7 +1068,7 @@ export default function App() {
           setCinematicPhase(1);
           setTimeout(() => setCinematicPhase(2), 700);
           setTimeout(() => setCinematicPhase(3), 2800);
-          setTimeout(() => { setShowLanding(false); setShowCinematic(false); setCinematicPhase(0); }, 3450);
+          setTimeout(() => { setShowLanding(false); setShowCinematic(false); setCinematicPhase(0); setFromLanding(true); }, 3450);
         }}
       />
       {showCinematic && cinematicPhase > 0 && (
@@ -1067,7 +1221,7 @@ export default function App() {
                   className={menuClosing?"sm-item-out":"sm-item"}
                   style={{animationDelay: menuClosing ? `${i*0.04}s` : `${0.08+i*0.07}s`, borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
                   <button
-                    onClick={()=>{setView(v);if(v==="browse")clearSearch();closeMenu();}}
+                    onClick={()=>{setView(v);if(v==="browse")clearSearch();else setFromLanding(false);closeMenu();}}
                     style={{
                       width:"100%",background:"none",border:"none",cursor:"pointer",
                       display:"flex",alignItems:"center",gap:"20px",
@@ -1156,56 +1310,19 @@ export default function App() {
       {/* BROWSE */}
       {view === "browse" && (
         <div style={{position:"relative"}}>
-          {/* 3D scroll-reveal featured motion card */}
-          {!searched && motions.length > 0 && (
-            <div style={{
-              perspective:"1200px",
-              maxWidth:"680px", margin:"0 auto",
-              padding: mobile ? "80px 16px 0" : "72px 24px 0",
-              position:"relative", zIndex:1,
-            }}>
-              <div style={{
-                animation:"card3d-in .9s cubic-bezier(.22,1,.36,1) .2s both",
-                transformStyle:"preserve-3d",
-                background:dark?"#111":"#fff",
-                border:`1px solid ${dark?"#222":"#e8e8e8"}`,
-                borderRadius:"18px",
-                padding:"28px 32px",
-                marginBottom:"0",
-                boxShadow: dark
-                  ? "0 0 0 1px #222, 0 20px 60px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)"
-                  : "0 0 0 1px #e8e8e8, 0 20px 60px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.05)",
-                cursor:"pointer",
-                transition:"transform .3s ease, box-shadow .3s ease",
-              }}
-              onClick={() => openMotion(motions[0])}
-              onMouseEnter={e => { e.currentTarget.style.transform="translateY(-4px) rotateX(2deg)"; e.currentTarget.style.boxShadow=dark?"0 0 0 1px #333, 0 32px 80px rgba(0,0,0,0.7)":"0 0 0 1px #ddd, 0 32px 80px rgba(0,0,0,0.14)"; }}
-              onMouseLeave={e => { e.currentTarget.style.transform=""; e.currentTarget.style.boxShadow=""; }}
-              >
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"16px",gap:"10px",flexWrap:"wrap"}}>
-                  <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
-                    <span style={{fontSize:"10px",fontWeight:700,letterSpacing:".07em",textTransform:"uppercase",color:(TC[motions[0].theme]||{text:"#888"}).text,background:(TC[motions[0].theme]||{bg:"transparent"}).bg,border:`1px solid ${(TC[motions[0].theme]||{border:"#333"}).border}`,padding:"2px 8px",borderRadius:"4px"}}>{motions[0].theme}</span>
-                    <span style={{fontSize:"10px",fontWeight:600,color:(DC[motions[0].difficulty]||{text:"#888"}).text,background:(DC[motions[0].difficulty]||{bg:"transparent"}).bg,border:`1px solid ${(DC[motions[0].difficulty]||{border:"#333"}).border}`,padding:"2px 8px",borderRadius:"4px"}}>{motions[0].difficulty}</span>
-                  </div>
-                  <span style={{fontSize:"10px",letterSpacing:".1em",textTransform:"uppercase",color:dark?"rgba(255,255,255,0.2)":"rgba(0,0,0,0.2)",fontWeight:600}}>Featured Motion →</span>
-                </div>
-                <p style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(17px,3vw,24px)",fontWeight:700,lineHeight:1.35,color:T.text,marginBottom:"18px",letterSpacing:"-0.3px"}}>{motions[0].motion}</p>
-                <div style={{display:"flex",gap:"16px"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                    <div style={{width:"8px",height:"8px",borderRadius:"50%",background:"#16a34a"}} />
-                    <span style={{fontSize:"12px",color:T.textMuted}}>{motions[0].propArgs?.length||0} Prop args</span>
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                    <div style={{width:"8px",height:"8px",borderRadius:"50%",background:"#dc2626"}} />
-                    <span style={{fontSize:"12px",color:T.textMuted}}>{motions[0].oppArgs?.length||0} Opp args</span>
-                  </div>
-                  {motions[0].tournament && (
-                    <span style={{fontSize:"12px",color:T.textMuted,marginLeft:"auto"}}>{motions[0].tournament}</span>
-                  )}
-                </div>
-              </div>
-            </div>
+
+          {/* ── Parallax scroll hero — only from landing ── */}
+          {fromLanding && !searched && (
+            <ParallaxHero
+              dark={dark}
+              motions={motions}
+              onScrollPast={() => { setFromLanding(false); setTimeout(()=>{window.scrollTo({top:0,behavior:'instant'});},50); }}
+              onCardClick={(m) => openMotion(m)}
+            />
           )}
+
+          {/* Browse content anchor */}
+          <div id="browse-content" />
           {/* Dot grid background */}
           <div style={{
             position:"fixed", inset:0, zIndex:0, pointerEvents:"none",
@@ -1221,7 +1338,7 @@ export default function App() {
               ? "radial-gradient(ellipse 100% 55% at 50% 0%, transparent 30%, #0a0a0a 100%)"
               : "radial-gradient(ellipse 100% 55% at 50% 0%, transparent 30%, #fafafa 100%)",
           }} />
-          <div style={{maxWidth:"680px",margin:"0 auto",padding:mobile?"32px 16px 24px":"32px 24px 28px",textAlign:"center",position:"relative",zIndex:1,animation:"browse-fade-in .7s cubic-bezier(.22,1,.36,1) .15s both"}}>
+          <div style={{maxWidth:"680px",margin:"0 auto",padding:fromLanding?(mobile?"24px 16px 24px":"24px 24px 28px"):(mobile?"72px 16px 24px":"72px 24px 32px"),textAlign:"center",position:"relative",zIndex:1,animation:"browse-fade-in .7s cubic-bezier(.22,1,.36,1) .15s both"}}>
             <p style={{fontSize:"11px",fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.textMuted,marginBottom:"14px"}}>WSDC Argument Database</p>
             <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,5vw,48px)",fontWeight:900,lineHeight:1.1,marginBottom:"10px",color:T.text,letterSpacing:"-1px"}}>
               Every argument.<br/><span style={{fontStyle:"italic",color:T.textMuted}}>Every motion.</span>
