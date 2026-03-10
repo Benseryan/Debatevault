@@ -177,354 +177,300 @@ function TypewriterText({ text, speed = 18, style }) {
 }
 
 // ── Cinematic entry transition ────────────────────────────────────────────────
-const DEBATE_IMAGES = [
-  { url:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1600&auto=format&fit=crop&q=80", caption:"WSDC World Championships" },
-  { url:"https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=1600&auto=format&fit=crop&q=80", caption:"Championship Round" },
-  { url:"https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1600&auto=format&fit=crop&q=80", caption:"Debate Preparation" },
-];
+// Three.js dot-wave background for the cinematic screen
+function DotWaveCanvas({ dark }) {
+  const canvasRef = React.useRef(null);
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    let raf;
+    let t = 0;
+    const COLS = 28, ROWS = 18, GAP = 48;
+
+    const resize = () => {
+      canvas.width  = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    const draw = () => {
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+      const offX = (W - (COLS - 1) * GAP) / 2;
+      const offY = (H - (ROWS - 1) * GAP) / 2;
+      for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+          const wave = Math.sin(col * 0.45 + t) * Math.cos(row * 0.55 + t * 0.7);
+          const x = offX + col * GAP;
+          const y = offY + row * GAP + wave * 14;
+          const r = 1.8 + Math.abs(wave) * 2.2;
+          const alpha = 0.12 + Math.abs(wave) * 0.22;
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fillStyle = dark
+            ? `rgba(255,255,255,${alpha})`
+            : `rgba(200,200,200,${alpha})`;
+          ctx.fill();
+        }
+      }
+      // Overlay a faint argument-flow diagram in the centre
+      const cx = W / 2, cy = H / 2;
+      const nodes = [
+        { x: cx,        y: cy - 120, label: "CLAIM",     col: "#0284c7" },
+        { x: cx - 160,  y: cy - 20,  label: "MECHANISM", col: "#40c090" },
+        { x: cx + 160,  y: cy - 20,  label: "LINK",      col: "#ffaa44" },
+        { x: cx,        y: cy + 100, label: "IMPACT",    col: "#ff7070" },
+      ];
+      const edges = [[0,1],[0,2],[1,3],[2,3]];
+      // draw edges
+      edges.forEach(([a, b]) => {
+        const na = nodes[a], nb = nodes[b];
+        const pulse = 0.3 + Math.abs(Math.sin(t * 1.2 + a)) * 0.25;
+        ctx.beginPath();
+        ctx.moveTo(na.x, na.y);
+        ctx.lineTo(nb.x, nb.y);
+        ctx.strokeStyle = `rgba(255,255,255,${pulse * 0.18})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+      // draw nodes
+      nodes.forEach((n, i) => {
+        const pulse = 0.7 + Math.sin(t * 1.5 + i * 0.8) * 0.3;
+        // glow
+        const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, 28);
+        grad.addColorStop(0, n.col + "33");
+        grad.addColorStop(1, n.col + "00");
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, 28, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+        // circle
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, 10 * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = n.col + "aa";
+        ctx.fill();
+        ctx.strokeStyle = n.col + "ff";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        // label
+        ctx.font = "600 9px 'DM Sans', sans-serif";
+        ctx.letterSpacing = "0.08em";
+        ctx.fillStyle = "rgba(255,255,255,0.35)";
+        ctx.textAlign = "center";
+        ctx.fillText(n.label, n.x, n.y + 22);
+      });
+      t += 0.018;
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
+  }, [dark]);
+  return <canvas ref={canvasRef} style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />;
+}
 
 function CinematicEntry({ phase, dark }) {
-  const [imgIdx] = React.useState(() => Math.floor(Math.random() * DEBATE_IMAGES.length));
-  const img = DEBATE_IMAGES[imgIdx];
-
   return (
     <div style={{
       position:"fixed", inset:0, zIndex:9000,
       fontFamily:"'DM Sans',sans-serif",
+      background: "#0a0a0a",
       animation: phase===3
         ? "hero-wipe-out .65s cubic-bezier(.76,0,.24,1) both"
         : "hero-wipe-in .7s cubic-bezier(.76,0,.24,1) both",
       overflow:"hidden",
     }}>
-      {/* Background image with zoom */}
-      <div style={{
-        position:"absolute", inset:0,
-        backgroundImage:`url(${img.url})`,
-        backgroundSize:"cover", backgroundPosition:"center",
-        animation:"hero-img-zoom 4s ease-out both",
-      }} />
-      {/* Dark overlay */}
-      <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.65) 100%)"}} />
+      {/* Animated dot-wave + logic chain canvas */}
+      <DotWaveCanvas dark={true} />
+      {/* Vignette overlay */}
+      <div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse 80% 70% at 50% 50%, transparent 30%, rgba(0,0,0,0.75) 100%)",zIndex:1,pointerEvents:"none"}} />
 
       {/* Content */}
       <div style={{
-        position:"absolute", inset:0,
+        position:"absolute", inset:0, zIndex:2,
         display:"flex", flexDirection:"column",
         justifyContent:"flex-end",
         padding:"clamp(32px,6vw,72px)",
       }}>
-        {/* Tag */}
         <div style={{
           animation:"hero-text-up .6s cubic-bezier(.22,1,.36,1) .3s both",
           marginBottom:"16px", display:"flex", alignItems:"center", gap:"10px",
         }}>
-          <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"rgba(255,255,255,0.5)"}} />
-          <span style={{fontSize:"11px",letterSpacing:".14em",textTransform:"uppercase",color:"rgba(255,255,255,0.5)",fontWeight:600}}>{img.caption}</span>
+          <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"rgba(255,255,255,0.4)"}} />
+          <span style={{fontSize:"11px",letterSpacing:".14em",textTransform:"uppercase",color:"rgba(255,255,255,0.4)",fontWeight:600}}>WSDC Argument Database</span>
         </div>
-
-        {/* Big headline */}
-        <div style={{
-          animation:"hero-text-up .7s cubic-bezier(.22,1,.36,1) .45s both",
-          marginBottom:"32px",
-        }}>
-          <div style={{
-            fontFamily:"'Playfair Display',serif",
-            fontSize:"clamp(36px,7vw,88px)",
-            fontWeight:900, lineHeight:1.0,
-            letterSpacing:"-2px",
-            color:"#fff",
-          }}>Every argument.</div>
-          <div style={{
-            fontFamily:"'Playfair Display',serif",
-            fontSize:"clamp(36px,7vw,88px)",
-            fontWeight:900, lineHeight:1.0,
-            letterSpacing:"-2px",
-            color:"rgba(255,255,255,0.4)",
-            fontStyle:"italic",
-          }}>Every motion.</div>
+        <div style={{ animation:"hero-text-up .7s cubic-bezier(.22,1,.36,1) .45s both", marginBottom:"32px" }}>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(36px,7vw,88px)", fontWeight:900, lineHeight:1.0, letterSpacing:"-2px", color:"#fff" }}>Every argument.</div>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(36px,7vw,88px)", fontWeight:900, lineHeight:1.0, letterSpacing:"-2px", color:"rgba(255,255,255,0.35)", fontStyle:"italic" }}>Every motion.</div>
         </div>
-
-        {/* Bottom bar */}
         <div style={{
           animation:"hero-text-up .6s cubic-bezier(.22,1,.36,1) .6s both",
           display:"flex", justifyContent:"space-between", alignItems:"flex-end",
-          borderTop:"1px solid rgba(255,255,255,0.15)", paddingTop:"20px",
+          borderTop:"1px solid rgba(255,255,255,0.1)", paddingTop:"20px",
         }}>
           <div>
-            <div style={{fontSize:"13px",color:"rgba(255,255,255,0.4)",letterSpacing:".06em",marginBottom:"3px",textTransform:"uppercase",fontWeight:600}}>DebateVault</div>
-            <div style={{fontSize:"12px",color:"rgba(255,255,255,0.25)"}}>WSDC Argument Database</div>
+            <div style={{fontSize:"13px",color:"rgba(255,255,255,0.35)",letterSpacing:".06em",marginBottom:"3px",textTransform:"uppercase",fontWeight:600}}>DebateVault</div>
+            <div style={{fontSize:"12px",color:"rgba(255,255,255,0.2)"}}>Build arguments. Win rounds.</div>
           </div>
-          <div style={{fontSize:"12px",color:"rgba(255,255,255,0.3)",letterSpacing:".1em",textTransform:"uppercase"}}>Loading…</div>
+          <div style={{fontSize:"12px",color:"rgba(255,255,255,0.25)",letterSpacing:".1em",textTransform:"uppercase"}}>Loading…</div>
         </div>
       </div>
     </div>
   );
 }
 
-// ── Parallax + ScrollStack from-landing experience ───────────────────────────
+// ── ScrollStack from-landing experience ──────────────────────────────────────
+function ScrollStackHero({ dark, motions, onComplete, onCardClick }) {
+  const containerRef  = React.useRef(null);
+  const cardsRef      = React.useRef([]);
+  const doneRef       = React.useRef(false);
+  const [browseIn, setBrowseIn] = React.useState(false);
 
-// Theme-matched debate images
-const HERO_SCENES = [
-  { url:"https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=1600&q=90&auto=format&fit=crop", label:"Economics & Policy" },
-  { url:"https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=1600&q=90&auto=format&fit=crop", label:"International Relations" },
-  { url:"https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1600&q=90&auto=format&fit=crop", label:"Human Rights & Justice" },
-  { url:"https://images.unsplash.com/photo-1543269865-cbf427effbad?w=1600&q=90&auto=format&fit=crop", label:"Technology & Society" },
-];
-
-// The full from-landing scroll experience
-function ParallaxHero({ dark, motions, onComplete, onCardClick }) {
-  const containerRef = React.useRef(null);
-  const stickyRef    = React.useRef(null);
-  const imgRef       = React.useRef(null);
-  const textRef      = React.useRef(null);
-  const cardsRef     = React.useRef([]);
-  const doneRef      = React.useRef(false);
-
-  const [scene]      = React.useState(() => HERO_SCENES[Math.floor(Math.random() * HERO_SCENES.length)]);
-  const [browseVisible, setBrowseVisible] = React.useState(false);
-
-  // Pick up to 4 motions for the stack cards
-  const stackMotions = motions ? motions.slice(0, 4) : [];
-
-  // ── Heights ──────────────────────────────────────────────────────────────
-  const VH    = typeof window !== "undefined" ? window.innerHeight : 800;
-  const PHASE1_H = VH * 2.2;    // parallax section
-  const CARD_H   = 420;          // each card height px
-  const CARD_GAP = VH * 0.8;    // scroll needed per card
-  const PHASE2_H = stackMotions.length * CARD_GAP + VH;
-  const TOTAL_H  = PHASE1_H + PHASE2_H;
+  const stackMotions = (motions || []).slice(0, 4);
+  const VH       = typeof window !== "undefined" ? window.innerHeight : 800;
+  const STACK_H  = VH * 5.5;   // total scroll height for stacking phase
 
   React.useEffect(() => {
-    let raf = null;
-    let lastY = -1;
-
+    let raf;
     const tick = () => {
-      const scrollY = window.scrollY;
-      if (Math.abs(scrollY - lastY) < 0.5) { raf = requestAnimationFrame(tick); return; }
-      lastY = scrollY;
-
-      // ── Phase 1: parallax image expand ─────────────────────────────────
-      if (imgRef.current) {
-        const p = Math.min(1, scrollY / (PHASE1_H * 0.5));
-        const c1 = Math.max(0, 26 - p * 26);
-        const c2 = Math.min(100, 74 + p * 26);
-        imgRef.current.style.clipPath = `polygon(${c1}% ${c1}%, ${c2}% ${c1}%, ${c2}% ${c2}%, ${c1}% ${c2}%)`;
-        imgRef.current.style.backgroundSize = `${165 - p * 65}%`;
-        // Fade out image as phase 1 ends
-        const fadeP = Math.max(0, Math.min(1, (scrollY - PHASE1_H * 0.75) / (PHASE1_H * 0.2)));
-        imgRef.current.style.opacity = 1 - fadeP;
-      }
-
-      // Hero text parallax up + fade
-      if (textRef.current) {
-        const t = Math.min(1, scrollY / (VH * 0.55));
-        textRef.current.style.transform = `translateY(${-t * 80}px)`;
-        textRef.current.style.opacity   = Math.max(0, 1 - t * 2);
-      }
-
-      // ── Phase 2: scroll-stack cards ─────────────────────────────────────
-      const phase2Start = PHASE1_H;
-      const phase2Scroll = scrollY - phase2Start;
+      const sy    = window.scrollY;
+      const total = STACK_H;
 
       cardsRef.current.forEach((card, i) => {
         if (!card) return;
+        const nCards = stackMotions.length || 4;
+        const PIN_TOP    = VH * 0.18;                      // where cards pin (from top)
+        const STACK_DIST = 28;                             // px offset per stacked card
+        const cardTrigger = i * (total / (nCards + 1));    // when this card starts entering
+        const enterDur    = VH * 0.6;
 
-        // Each card starts entering at its own scroll offset
-        const cardEnterAt = i * CARD_GAP * 0.6;
-        const cardPinAt   = i * CARD_GAP;
-        const cardPinEnd  = PHASE2_H - VH * 0.8;
+        // entrance: slide up from below
+        const enterP = Math.max(0, Math.min(1, (sy - cardTrigger) / enterDur));
+        const enterY = (1 - enterP) * 100;
+        const enterO = Math.min(1, enterP * 1.8);
 
-        const enterProgress = Math.max(0, Math.min(1, (phase2Scroll - cardEnterAt) / (CARD_GAP * 0.4)));
-        const pinProgress   = Math.max(0, Math.min(1, (phase2Scroll - cardPinAt) / cardPinEnd));
+        // stacking: once entered, pin + scale down as later cards arrive
+        const stackDepth  = Math.max(0, sy - cardTrigger - enterDur);
+        const stackScale  = Math.max(0.82, 1 - i * 0.04 - Math.min(0.12, stackDepth * 0.00015));
+        const stackOffset = i * STACK_DIST;
 
-        // Cards behind the top get scaled down and pushed up slightly
-        const depth = Math.max(0, (phase2Scroll - cardPinAt) / CARD_GAP);
-        const stackScale  = Math.max(0.82, 1 - Math.min(i, depth) * 0.04);
-        const stackOffset = Math.min(i, depth) * -28;
-
-        // Entrance animation: slides up from below
-        const enterY   = enterProgress < 1 ? (1 - enterProgress) * 80 : 0;
-        const enterOp  = Math.min(1, enterProgress * 1.5);
-
-        // Pin: card sticks at top while scrolling through its range
-        let translateY = enterY;
-        if (phase2Scroll > cardPinAt && phase2Scroll < cardPinEnd) {
-          translateY = phase2Scroll - cardPinAt - i * 28;
-          translateY = Math.max(0, translateY * 0.05); // subtle drift
-        }
-
-        card.style.transform = `translateY(${translateY + stackOffset}px) scale(${stackScale})`;
-        card.style.opacity   = String(enterOp);
+        card.style.transform  = `translateY(calc(${PIN_TOP + stackOffset}px + ${enterY}px)) scale(${stackScale})`;
+        card.style.opacity    = String(Math.min(1, enterO));
+        card.style.zIndex     = String(10 + i);
       });
 
-      // ── Phase 3: reveal browse ───────────────────────────────────────────
-      if (!doneRef.current && scrollY > TOTAL_H * 0.88) {
+      if (!doneRef.current && sy > STACK_H * 0.88) {
         doneRef.current = true;
-        setBrowseVisible(true);
-        setTimeout(() => {
-          onComplete && onComplete();
-          window.scrollTo({ top: 0, behavior: "instant" });
-        }, 600);
+        setBrowseIn(true);
+        setTimeout(() => { onComplete?.(); window.scrollTo({ top:0, behavior:"instant" }); }, 650);
       }
-
       raf = requestAnimationFrame(tick);
     };
-
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [PHASE1_H, PHASE2_H, TOTAL_H, VH, CARD_GAP]);
+  }, [STACK_H, VH, stackMotions.length]);
 
-  // Argument card colours per side
-  const sideStyle = (side) => side === "Proposition"
-    ? { accent:"#16a34a", bg: dark?"rgba(22,163,74,0.07)":"rgba(22,163,74,0.05)", border:"rgba(22,163,74,0.22)" }
-    : { accent:"#dc2626", bg: dark?"rgba(220,38,38,0.07)":"rgba(220,38,38,0.05)", border:"rgba(220,38,38,0.22)" };
-
-  const SIDES = ["Proposition","Opposition","Proposition","Opposition"];
+  const SIDES   = ["Proposition","Opposition","Proposition","Opposition"];
+  const COLORS  = { Proposition: { accent:"#16a34a", bg: dark?"rgba(22,163,74,0.08)":"rgba(22,163,74,0.05)", border:"rgba(22,163,74,0.22)" },
+                    Opposition:  { accent:"#dc2626", bg: dark?"rgba(220,38,38,0.08)":"rgba(220,38,38,0.05)", border:"rgba(220,38,38,0.22)" } };
 
   return (
-    <div ref={containerRef} style={{ height: TOTAL_H + "px", position:"relative", width:"100%", fontFamily:"'DM Sans',sans-serif" }}>
+    <div ref={containerRef} style={{ height: STACK_H+"px", position:"relative", width:"100%", background: dark?"#0a0a0a":"#fafafa" }}>
 
-      {/* ── PHASE 1 — sticky parallax image ── */}
-      <div ref={stickyRef} style={{ position:"sticky", top:0, height:"100vh", zIndex:2, overflow:"hidden", pointerEvents:"none" }}>
-        {/* Expanding photo */}
-        <div ref={imgRef} style={{
-          position:"absolute", inset:0,
-          backgroundImage:`url(${scene.url})`,
-          backgroundSize:"165%", backgroundPosition:"center",
-          backgroundRepeat:"no-repeat",
-          clipPath:"polygon(26% 26%, 74% 26%, 74% 74%, 26% 74%)",
-          willChange:"clip-path, background-size, opacity",
-        }} />
+      {/* Subtle dot grid */}
+      <div style={{ position:"fixed", inset:0, zIndex:0, pointerEvents:"none",
+        backgroundImage: dark ? "radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px)" : "radial-gradient(circle,rgba(0,0,0,0.07) 1px,transparent 1px)",
+        backgroundSize:"30px 30px" }} />
 
-        {/* Dark overlay — only once image is close to full */}
-        <div style={{ position:"absolute", inset:0, background:"linear-gradient(160deg,rgba(0,0,0,0.08) 0%,rgba(0,0,0,0.6) 100%)", zIndex:1 }} />
+      {/* Sticky card area */}
+      <div style={{ position:"sticky", top:0, height:"100vh", zIndex:1, overflow:"hidden", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"flex-start", paddingTop:"14vh" }}>
 
-        {/* Hero text */}
-        <div ref={textRef} style={{
-          position:"absolute", inset:0, zIndex:2,
-          display:"flex", flexDirection:"column", justifyContent:"flex-end",
-          padding:"clamp(32px,6vw,80px)",
-        }}>
-          <div style={{ fontSize:"10px", letterSpacing:".16em", textTransform:"uppercase", color:"rgba(255,255,255,0.4)", fontWeight:700, marginBottom:"12px", display:"flex", alignItems:"center", gap:"10px" }}>
-            <div style={{ width:"24px", height:"1px", background:"rgba(255,255,255,0.35)" }} />
-            {scene.label}
-          </div>
-          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(42px,9vw,100px)", fontWeight:900, lineHeight:0.92, letterSpacing:"-3px", color:"#fff" }}>Every argument.</div>
-          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(42px,9vw,100px)", fontWeight:900, lineHeight:0.92, letterSpacing:"-3px", color:"rgba(255,255,255,0.28)", fontStyle:"italic", marginBottom:"28px" }}>Every motion.</div>
-          <div style={{ fontSize:"12px", color:"rgba(255,255,255,0.3)", letterSpacing:".1em", display:"flex", alignItems:"center", gap:"8px" }}>
-            <div style={{ width:"16px", height:"1px", background:"rgba(255,255,255,0.3)" }} />
-            SCROLL TO EXPLORE
-          </div>
-        </div>
-      </div>
-
-      {/* ── PHASE 2 — scroll stack argument cards ── */}
-      <div style={{
-        position:"absolute", top: PHASE1_H + "px", left:0, right:0,
-        height: PHASE2_H + "px",
-        zIndex:3,
-        display:"flex", flexDirection:"column", alignItems:"center",
-        paddingTop:"60px",
-      }}>
         {/* Section label */}
-        <div style={{
-          textAlign:"center", marginBottom:"48px",
-          opacity:0.7,
-          padding:"0 24px",
-        }}>
-          <div style={{ fontSize:"10px", letterSpacing:".16em", textTransform:"uppercase", color: dark?"rgba(255,255,255,0.3)":"rgba(0,0,0,0.3)", fontWeight:700, marginBottom:"8px" }}>From the database</div>
-          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(20px,4vw,32px)", fontWeight:800, color: dark?"rgba(255,255,255,0.8)":"rgba(0,0,0,0.8)", letterSpacing:"-0.5px" }}>Sample arguments</div>
+        <div style={{ textAlign:"center", marginBottom:"32px", animation:"browse-fade-in .6s ease .1s both" }}>
+          <div style={{ fontSize:"10px", letterSpacing:".18em", textTransform:"uppercase", color: dark?"rgba(255,255,255,0.25)":"rgba(0,0,0,0.3)", fontWeight:700, marginBottom:"6px" }}>Sample arguments</div>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(18px,3vw,26px)", fontWeight:800, color: dark?"rgba(255,255,255,0.7)":"rgba(0,0,0,0.75)", letterSpacing:"-0.5px" }}>Scroll to explore</div>
         </div>
 
-        {/* Cards */}
-        <div style={{ position:"relative", width:"100%", maxWidth:"660px", padding:"0 20px", perspective:"1000px" }}>
-          {stackMotions.length === 0 ? (
-            <div style={{ textAlign:"center", padding:"80px 0", color: dark?"#333":"#ccc", fontStyle:"italic" }}>Loading motions…</div>
-          ) : stackMotions.map((motion, i) => {
-            const side = SIDES[i];
-            const s = sideStyle(side);
-            const arg = side === "Proposition"
-              ? motion.propArgs?.[0]
-              : motion.oppArgs?.[0];
-
-            return (
-              <div
-                key={motion.id || i}
-                ref={el => cardsRef.current[i] = el}
-                onClick={() => onCardClick && onCardClick(motion)}
-                style={{
-                  position: i === 0 ? "relative" : "absolute",
-                  top: i === 0 ? "auto" : `${i * 28}px`,
-                  left:0, right:0,
-                  opacity:0,
-                  transform:"translateY(80px)",
-                  willChange:"transform, opacity",
-                  transformOrigin:"top center",
-                  cursor:"pointer",
-                  marginBottom: i === 0 ? `${CARD_GAP}px` : 0,
-                  background: dark ? "#0f0f0f" : "#fff",
-                  border: `1px solid ${dark?"#1e1e1e":"#ebebeb"}`,
-                  borderRadius:"20px",
-                  padding:"28px 32px",
-                  boxShadow: dark
-                    ? "0 8px 40px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.4)"
-                    : "0 8px 40px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.04)",
-                  overflow:"hidden",
-                }}
-              >
-                {/* Card accent top border */}
-                <div style={{ position:"absolute", top:0, left:0, right:0, height:"2px", background:`linear-gradient(90deg, ${s.accent}, transparent)` }} />
-
-                {/* Side badge + motion theme */}
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"16px" }}>
-                  <span style={{ fontSize:"10px", fontWeight:700, letterSpacing:".1em", textTransform:"uppercase", color:s.accent, background:s.bg, border:`1px solid ${s.border}`, padding:"3px 10px", borderRadius:"20px" }}>{side}</span>
-                  <span style={{ fontSize:"10px", color: dark?"#444":"#bbb", letterSpacing:".06em", fontWeight:600, textTransform:"uppercase" }}>{motion.theme}</span>
-                </div>
-
-                {/* Motion */}
-                <p style={{ fontSize:"11px", color: dark?"#555":"#aaa", marginBottom:"8px", lineHeight:1.4 }}>{motion.motion}</p>
-
-                {/* Argument */}
-                <p style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(15px,2.5vw,20px)", fontWeight:700, lineHeight:1.35, color: dark?"#eee":"#111", letterSpacing:"-0.3px", marginBottom:"18px" }}>
-                  {arg?.name || (side === "Proposition" ? "Prop argument" : "Opp argument")}
-                </p>
-
-                {arg?.summary && (
-                  <p style={{ fontSize:"13px", color: dark?"#666":"#888", lineHeight:1.65, display:"-webkit-box", WebkitLineClamp:3, WebkitBoxOrient:"vertical", overflow:"hidden" }}>
-                    {arg.summary}
-                  </p>
-                )}
-
-                {/* Bottom */}
-                <div style={{ marginTop:"18px", paddingTop:"14px", borderTop:`1px solid ${dark?"#1a1a1a":"#f0f0f0"}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                  <span style={{ fontSize:"11px", color: dark?"#444":"#ccc" }}>{i+1} / {stackMotions.length}</span>
-                  <span style={{ fontSize:"11px", color:s.accent, fontWeight:600, letterSpacing:".04em" }}>View full argument →</span>
-                </div>
-              </div>
-            );
-          })}
+        {/* Cards container — perspective for 3D feel */}
+        <div style={{ position:"relative", width:"100%", maxWidth:"640px", padding:"0 20px", perspective:"900px", transformStyle:"preserve-3d" }}>
+          {stackMotions.length === 0
+            ? [0,1,2,3].map(i => {
+                const side = SIDES[i];
+                const col  = COLORS[side];
+                return (
+                  <div key={i} ref={el => cardsRef.current[i] = el}
+                    style={{ position:"absolute", left:"20px", right:"20px", top:0, opacity:0, transformOrigin:"top center",
+                      willChange:"transform,opacity", background: dark?"#0f0f0f":"#fff",
+                      border:`1px solid ${dark?"#1e1e1e":"#e8e8e8"}`, borderRadius:"20px", padding:"28px 32px",
+                      boxShadow: dark?"0 12px 48px rgba(0,0,0,0.65)":"0 12px 48px rgba(0,0,0,0.10)", overflow:"hidden" }}>
+                    <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:`linear-gradient(90deg,${col.accent},transparent)`}} />
+                    <div style={{fontSize:"10px",fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:col.accent,background:col.bg,border:`1px solid ${col.border}`,padding:"3px 10px",borderRadius:"20px",display:"inline-block",marginBottom:"16px"}}>{side}</div>
+                    <div style={{width:"60%",height:"18px",background:dark?"#1a1a1a":"#f0f0f0",borderRadius:"4px",marginBottom:"10px"}} />
+                    <div style={{width:"90%",height:"12px",background:dark?"#161616":"#f5f5f5",borderRadius:"3px",marginBottom:"6px"}} />
+                    <div style={{width:"75%",height:"12px",background:dark?"#161616":"#f5f5f5",borderRadius:"3px"}} />
+                  </div>
+                );
+              })
+            : stackMotions.map((motion, i) => {
+                const side = SIDES[i];
+                const col  = COLORS[side];
+                const arg  = side === "Proposition" ? motion.propArgs?.[0] : motion.oppArgs?.[0];
+                return (
+                  <div key={motion.id || i} ref={el => cardsRef.current[i] = el}
+                    onClick={() => onCardClick?.(motion)}
+                    style={{ position: i===0?"relative":"absolute", left: i===0?"auto":"0", right: i===0?"auto":"0", top: i===0?"auto":"0",
+                      opacity:0, transformOrigin:"top center", willChange:"transform,opacity",
+                      background: dark?"#0f0f0f":"#fff",
+                      border:`1px solid ${dark?"#1e1e1e":"#e8e8e8"}`, borderRadius:"20px", padding:"28px 32px",
+                      boxShadow: dark?"0 12px 48px rgba(0,0,0,0.65)":"0 12px 48px rgba(0,0,0,0.10)",
+                      cursor:"pointer", overflow:"hidden",
+                      marginBottom: i===0 ? `${STACK_H/(stackMotions.length+1)}px` : 0 }}>
+                    {/* Top accent */}
+                    <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:`linear-gradient(90deg,${col.accent},transparent)`}} />
+                    {/* Header */}
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+                      <span style={{fontSize:"10px",fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:col.accent,background:col.bg,border:`1px solid ${col.border}`,padding:"3px 10px",borderRadius:"20px"}}>{side}</span>
+                      <span style={{fontSize:"10px",color:dark?"#444":"#bbb",letterSpacing:".06em",fontWeight:600,textTransform:"uppercase"}}>{motion.theme}</span>
+                    </div>
+                    {/* Motion */}
+                    <p style={{fontSize:"11px",color:dark?"#555":"#aaa",marginBottom:"6px",lineHeight:1.4}}>{motion.motion}</p>
+                    {/* Argument name */}
+                    <p style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(16px,2.5vw,22px)",fontWeight:800,lineHeight:1.3,color:dark?"#eee":"#111",letterSpacing:"-0.3px",marginBottom:"14px"}}>
+                      {arg?.name || `${side} argument`}
+                    </p>
+                    {/* Summary preview */}
+                    {arg?.summary && (
+                      <p style={{fontSize:"13px",color:dark?"#666":"#888",lineHeight:1.65,display:"-webkit-box",WebkitLineClamp:3,WebkitBoxOrient:"vertical",overflow:"hidden"}}>
+                        {arg.summary}
+                      </p>
+                    )}
+                    {/* Footer */}
+                    <div style={{marginTop:"16px",paddingTop:"12px",borderTop:`1px solid ${dark?"#1a1a1a":"#f0f0f0"}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <span style={{fontSize:"11px",color:dark?"#444":"#ccc"}}>{i+1} / {stackMotions.length}</span>
+                      <span style={{fontSize:"11px",color:col.accent,fontWeight:600,letterSpacing:".04em"}}>View full argument →</span>
+                    </div>
+                  </div>
+                );
+              })
+          }
         </div>
 
-        {/* Scroll CTA at bottom */}
-        <div style={{ marginTop:"60px", textAlign:"center", opacity:0.4 }}>
-          <div style={{ fontSize:"11px", letterSpacing:".12em", textTransform:"uppercase", color: dark?"#fff":"#000", marginBottom:"8px" }}>Continue to browse</div>
-          <div style={{ fontSize:"18px", color: dark?"#fff":"#000" }}>↓</div>
+        {/* Progress dots */}
+        <div style={{position:"absolute",bottom:"32px",display:"flex",gap:"6px"}}>
+          {(stackMotions.length > 0 ? stackMotions : [0,1,2,3]).map((_,i) => (
+            <div key={i} style={{width:"4px",height:"4px",borderRadius:"50%",background:dark?"rgba(255,255,255,0.2)":"rgba(0,0,0,0.15)"}} />
+          ))}
         </div>
       </div>
 
-      {/* ── PHASE 3 — browse slide-in overlay ── */}
-      {browseVisible && (
-        <div style={{
-          position:"fixed", inset:0, zIndex:100,
-          background: dark?"#0a0a0a":"#fafafa",
-          animation:"hero-wipe-in .6s cubic-bezier(.76,0,.24,1) both",
-          pointerEvents:"none",
-        }} />
+      {/* Wipe-out overlay */}
+      {browseIn && (
+        <div style={{position:"fixed",inset:0,zIndex:999,background:dark?"#0a0a0a":"#fafafa",animation:"hero-wipe-in .6s cubic-bezier(.76,0,.24,1) both",pointerEvents:"none"}} />
       )}
     </div>
   );
 }
-
 
 // ── Animated cycling placeholder ─────────────────────────────────────────────
 const SEARCH_EXAMPLES = [
@@ -1423,12 +1369,12 @@ export default function App() {
       {view === "browse" && (
         <div style={{position:"relative"}}>
 
-          {/* ── Parallax scroll hero — only from landing ── */}
+          {/* ── ScrollStack hero — only from landing ── */}
           {fromLanding && !searched && (
-            <ParallaxHero
+            <ScrollStackHero
               dark={dark}
               motions={motions}
-              onComplete={() => { setTimeout(() => { setFromLanding(false); }, 620); }}
+              onComplete={() => { setTimeout(() => setFromLanding(false), 650); }}
               onCardClick={(m) => openMotion(m)}
             />
           )}
