@@ -314,18 +314,21 @@ function TiltedHeroCard({ dark }) {
   );
 }
 
-function CinematicEntry({ phase, dark }) {
+function CinematicEntry({ phase, dark, onExplore }) {
   return (
-    <div style={{
-      position:"fixed", inset:0, zIndex:9000,
-      fontFamily:"'DM Sans',sans-serif",
-      background:"#0a0a0a",
-      animation: phase===3
-        ? "hero-wipe-out .65s cubic-bezier(.76,0,.24,1) both"
-        : "hero-wipe-in .7s cubic-bezier(.76,0,.24,1) both",
-      overflow:"hidden",
-      display:"flex",
-    }}>
+    <div
+      style={{
+        position:"fixed", inset:0, zIndex:9000,
+        fontFamily:"'DM Sans',sans-serif",
+        background:"#0a0a0a",
+        animation: phase===3
+          ? "hero-wipe-out .65s cubic-bezier(.76,0,.24,1) both"
+          : "hero-wipe-in .7s cubic-bezier(.76,0,.24,1) both",
+        overflow:"hidden",
+        display:"flex",
+      }}
+      onWheel={phase !== 3 ? onExplore : undefined}
+    >
       {/* Left text column */}
       <div style={{
         position:"absolute", inset:0, zIndex:2,
@@ -353,7 +356,37 @@ function CinematicEntry({ phase, dark }) {
             <div style={{fontSize:"13px",color:"rgba(255,255,255,0.3)",letterSpacing:".06em",marginBottom:"3px",textTransform:"uppercase",fontWeight:600}}>DebateVault</div>
             <div style={{fontSize:"12px",color:"rgba(255,255,255,0.18)"}}>Build arguments. Win rounds.</div>
           </div>
-          <div style={{fontSize:"11px",color:"rgba(255,255,255,0.2)",letterSpacing:".12em",textTransform:"uppercase"}}>Loading…</div>
+          {/* Explore button */}
+          <button
+            onClick={onExplore}
+            style={{
+              background:"#fff", color:"#0a0a0a",
+              border:"none", borderRadius:"8px",
+              padding:"12px 28px",
+              fontSize:"12px", fontWeight:700, letterSpacing:".1em", textTransform:"uppercase",
+              cursor:"pointer", fontFamily:"'DM Sans',sans-serif",
+              display:"flex", alignItems:"center", gap:"10px",
+              transition:"opacity .2s, transform .15s",
+              boxShadow:"0 4px 20px rgba(255,255,255,0.12)",
+            }}
+            onMouseEnter={e=>{e.currentTarget.style.opacity=".85"; e.currentTarget.style.transform="translateY(-1px)";}}
+            onMouseLeave={e=>{e.currentTarget.style.opacity="1"; e.currentTarget.style.transform="translateY(0)";}}
+          >
+            Explore Database
+            <span style={{fontSize:"14px"}}>→</span>
+          </button>
+        </div>
+
+        {/* Scroll hint */}
+        <div style={{
+          position:"absolute", bottom:"28px", left:"50%", transform:"translateX(-50%)",
+          fontSize:"10px", letterSpacing:".14em", textTransform:"uppercase", color:"rgba(255,255,255,0.18)",
+          display:"flex", flexDirection:"column", alignItems:"center", gap:"6px",
+          animation:"hero-text-up .6s cubic-bezier(.22,1,.36,1) .9s both",
+          pointerEvents:"none",
+        }}>
+          or scroll down
+          <div style={{width:"1px",height:"20px",background:"rgba(255,255,255,0.15)",borderRadius:"1px"}} />
         </div>
       </div>
 
@@ -443,11 +476,11 @@ function ScrollStackHero({ dark, motions, onComplete, onCardClick }) {
                 const col  = COLORS[side];
                 return (
                   <div key={i} ref={el => cardsRef.current[i] = el}
-                    style={{ position:"absolute", left:"20px", right:"20px", top:0, opacity:0, transformOrigin:"top center",
+                    style={{ position:"absolute", left:"0", right:"0", top:0, opacity:0, transformOrigin:"top center",
                       willChange:"transform,opacity", background: dark?"#0f0f0f":"#fff",
-                      border:`1px solid ${dark?"#1e1e1e":"#e8e8e8"}`, borderRadius:"20px", padding:"28px 32px",
-                      boxShadow: dark?"0 12px 48px rgba(0,0,0,0.65)":"0 12px 48px rgba(0,0,0,0.10)", overflow:"hidden" }}>
-                    <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:`linear-gradient(90deg,${col.accent},transparent)`}} />
+                      border:`3px solid ${col.accent}44`, borderRadius:"24px", padding:"36px 40px",
+                      boxShadow: dark?"0 24px 80px rgba(0,0,0,0.8)":"0 24px 80px rgba(0,0,0,0.15)", overflow:"hidden" }}>
+                    <div style={{position:"absolute",top:0,left:0,right:0,height:"4px",background:`linear-gradient(90deg,${col.accent},${col.accent}44,transparent)`,borderRadius:"24px 24px 0 0"}} />
                     <div style={{fontSize:"10px",fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:col.accent,background:col.bg,border:`1px solid ${col.border}`,padding:"3px 10px",borderRadius:"20px",display:"inline-block",marginBottom:"16px"}}>{side}</div>
                     <div style={{width:"60%",height:"18px",background:dark?"#1a1a1a":"#f0f0f0",borderRadius:"4px",marginBottom:"10px"}} />
                     <div style={{width:"90%",height:"12px",background:dark?"#161616":"#f5f5f5",borderRadius:"3px",marginBottom:"6px"}} />
@@ -465,8 +498,8 @@ function ScrollStackHero({ dark, motions, onComplete, onCardClick }) {
                     style={{ position: i===0?"relative":"absolute", left: i===0?"auto":"0", right: i===0?"auto":"0", top: i===0?"auto":"0",
                       opacity:0, transformOrigin:"top center", willChange:"transform,opacity",
                       background: dark?"#0f0f0f":"#fff",
-                      border:`2px solid ${dark?"#2a2a2a":"#d8d8d8"}`, borderRadius:"24px", padding:"36px 40px",
-                      boxShadow: dark?"0 20px 70px rgba(0,0,0,0.75), 0 0 0 1px #1a1a1a":"0 20px 70px rgba(0,0,0,0.13), 0 0 0 1px #eee",
+                      border:`3px solid ${col.accent}44`, borderRadius:"24px", padding:"36px 40px",
+                      boxShadow: dark?"0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04)":"0 24px 80px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.04)",
                       cursor:"pointer", overflow:"hidden",
                       marginBottom: i===0 ? `${STACK_H/(stackMotions.length+1)}px` : 0 }}>
                     {/* Top accent */}
@@ -1168,12 +1201,23 @@ export default function App() {
           setShowCinematic(true);
           setCinematicPhase(1);
           setTimeout(() => setCinematicPhase(2), 700);
-          setTimeout(() => setCinematicPhase(3), 2800);
-          setTimeout(() => { setShowLanding(false); setShowCinematic(false); setCinematicPhase(0); setFromLanding(true); }, 3450);
+          setShowLanding(false);
         }}
       />
       {showCinematic && cinematicPhase > 0 && (
-        <CinematicEntry phase={cinematicPhase} dark={dark} />
+        <CinematicEntry
+          phase={cinematicPhase}
+          dark={dark}
+          onExplore={() => {
+            setCinematicPhase(3);
+            setTimeout(() => {
+              setShowCinematic(false);
+              setCinematicPhase(0);
+              setFromLanding(true);
+              window.scrollTo({ top: 0, behavior: "instant" });
+            }, 680);
+          }}
+        />
       )}
     </>
   );
@@ -1349,7 +1393,7 @@ export default function App() {
           {/* Bottom strip */}
           <div style={{padding:"24px 52px",display:"flex",alignItems:"center",justifyContent:"space-between",borderTop:"1px solid rgba(255,255,255,0.07)"}}>
             <div style={{display:"flex",gap:"24px"}}>
-              <button onClick={()=>{sessionStorage.removeItem("dv-entered");setShowLanding(true);closeMenu();}}
+              <button onClick={()=>{sessionStorage.removeItem("dv-entered");setFromLanding(false);setShowCinematic(false);setCinematicPhase(0);setShowLanding(true);closeMenu();}}
                 style={{background:"none",border:"none",cursor:"pointer",fontSize:"13px",color:"rgba(255,255,255,0.4)",fontFamily:"inherit",padding:0,letterSpacing:".04em"}}>
                 ← Home
               </button>
